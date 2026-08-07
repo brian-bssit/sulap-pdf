@@ -23,6 +23,7 @@ function formatBytes(bytes: number): string {
 export default function MergeTool() {
   const [files, setFiles] = useState<MergeFile[]>([]);
   const [isProcessing, setProcessing] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
 
@@ -38,6 +39,7 @@ export default function MergeTool() {
     ];
     setFiles(merged);
     setError(null);
+    setSuccess(false);
   };
 
   const removeFile = (id: string) => setFiles(files.filter((f) => f.id !== id));
@@ -76,6 +78,7 @@ export default function MergeTool() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
+      setSuccess(true);
     } catch (err: unknown) {
       const msg =
         err && typeof err === "object" && "response" in err
@@ -190,18 +193,30 @@ export default function MergeTool() {
 
         <div className="flex items-center justify-between pt-4 border-t border-slate-100">
           <p className="text-xs text-slate-500">
-            {files.length < 2
-              ? "⚠️ Pilih minimal 2 file untuk digabungkan"
-              : `✅ ${files.length} file siap digabungkan`}
+            {success
+              ? "✅ Selesai"
+              : files.length < 2
+                ? "⚠️ Pilih minimal 2 file untuk digabungkan"
+                : `✅ ${files.length} file siap digabungkan`}
           </p>
-          <button
-            onClick={handleMerge}
-            disabled={files.length < 2}
-            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20 disabled:shadow-none"
-          >
-            <Layers size={16} />
-            Gabungkan & Download
-          </button>
+          {success ? (
+            <button
+              onClick={() => { setFiles([]); setSuccess(false); setError(null); }}
+              className="flex items-center gap-2 bg-white border-2 border-blue-200 text-blue-700 px-6 py-2.5 rounded-xl font-semibold hover:bg-blue-50 transition-all"
+            >
+              <Layers size={16} />
+              Proses Dokumen Lainnya
+            </button>
+          ) : (
+            <button
+              onClick={handleMerge}
+              disabled={files.length < 2}
+              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20 disabled:shadow-none"
+            >
+              <Layers size={16} />
+              Gabungkan & Download
+            </button>
+          )}
         </div>
       </div>
       <SecurityFooter />

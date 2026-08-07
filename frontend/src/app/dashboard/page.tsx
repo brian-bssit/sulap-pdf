@@ -11,17 +11,19 @@ import {
   Menu,
   ShieldCheck,
   Users,
+  FileUp,
 } from "lucide-react";
 import LoadingOverlay from "@/components/LoadingOverlay";
 import CompressTool from "@/components/CompressTool";
 import MergeTool from "@/components/MergeTool";
 import RearrangeTool from "@/components/RearrangeTool";
+import ConvertTool from "@/components/ConvertTool";
 import AuditTable from "@/components/AuditTable";
 import UserManagement from "@/components/UserManagement";
 
 const LOGO_URL = "/bss-logo.jpg";
 
-type Tab = "merge" | "compress" | "rearrange" | "admin";
+type Tab = "merge" | "compress" | "rearrange" | "convert" | "admin";
 
 interface User {
   name: string;
@@ -35,6 +37,7 @@ const navItems: { id: Tab; label: string; icon: React.ReactNode; roles: string[]
   { id: "compress", label: "Compress PDF", icon: <Minimize2 size={20} />, roles: ["user", "admin"] },
   { id: "merge", label: "Merge PDF", icon: <Layers size={20} />, roles: ["user", "admin"] },
   { id: "rearrange", label: "Rearrange PDF", icon: <Grid3x3 size={20} />, roles: ["user", "admin"] },
+  { id: "convert", label: "Convert to PDF", icon: <FileUp size={20} />, roles: ["user", "admin"] },
   { id: "admin", label: "Admin Panel", icon: <ShieldAlert size={20} />, roles: ["admin"] },
 ];
 
@@ -42,6 +45,7 @@ const pageTitles: Record<Tab, { title: string; subtitle: string }> = {
   merge: { title: "Gabung PDF", subtitle: "Gabungkan 2 hingga 10 file PDF menjadi satu" },
   compress: { title: "Kompres PDF", subtitle: "Kurangi ukuran file PDF tanpa kehilangan kualitas" },
   rearrange: { title: "Atur Ulang PDF", subtitle: "Ubah urutan, hapus, atau putar halaman PDF" },
+  convert: { title: "Konversi ke PDF", subtitle: "Ubah dokumen apapun menjadi PDF — DOCX, XLSX, PPTX, dan lainnya" },
   admin: { title: "Admin Panel", subtitle: "User management & audit logs" },
 };
 
@@ -208,6 +212,8 @@ function DashboardContent({ tab }: { tab: Tab }) {
       return <CompressTool />;
     case "rearrange":
       return <RearrangeTool />;
+    case "convert":
+      return <ConvertTool />;
     case "admin":
       return <AdminPanel />;
   }

@@ -29,6 +29,7 @@ export default function RearrangeTool() {
   const fileBytes = useRef<ArrayBuffer | null>(null);
   const [pages, setPages] = useState<PageInfo[]>([]);
   const [isProcessing, setProcessing] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [isRendering, setRendering] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const dragIdx = useRef<number | null>(null);
@@ -86,6 +87,7 @@ export default function RearrangeTool() {
     if (!f) return;
     setFile({ name: f.name, size: f.size });
     setError(null);
+    setSuccess(false);
     // Read bytes once, store in ref for later upload
     f.arrayBuffer().then((buf) => { fileBytes.current = buf; });
     renderPages(f);
@@ -164,6 +166,7 @@ export default function RearrangeTool() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
+      setSuccess(true);
     } catch (err: unknown) {
       const msg =
         err && typeof err === "object" && "response" in err
@@ -181,6 +184,7 @@ export default function RearrangeTool() {
     if (f) {
       setFile({ name: f.name, size: f.size });
       setError(null);
+      setSuccess(false);
       f.arrayBuffer().then((buf) => { fileBytes.current = buf; });
       renderPages(f);
     }
@@ -248,7 +252,7 @@ export default function RearrangeTool() {
                 </div>
               </div>
               <button
-                onClick={() => { setFile(null); setPages([]); fileBytes.current = null; }}
+                onClick={() => { setFile(null); setPages([]); fileBytes.current = null; setSuccess(false); }}
                 className="text-xs text-purple-600 hover:text-purple-700 font-medium px-3 py-1.5 rounded-lg hover:bg-purple-100 transition-colors"
               >
                 Ganti File
@@ -340,15 +344,27 @@ export default function RearrangeTool() {
             {/* Action buttons */}
             {!isRendering && (
               <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                <p className="text-xs text-slate-500">💡 Tarik thumbnail untuk mengubah urutan</p>
-                <button
-                  onClick={handleRearrange}
-                  disabled={pages.length === 0}
-                  className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20 disabled:shadow-none"
-                >
-                  <Download size={16} />
-                  Simpan & Download
-                </button>
+                <p className="text-xs text-slate-500">
+                  {success ? "✅ Selesai" : "💡 Tarik thumbnail untuk mengubah urutan"}
+                </p>
+                {success ? (
+                  <button
+                    onClick={() => { setFile(null); setPages([]); fileBytes.current = null; setSuccess(false); setError(null); }}
+                    className="flex items-center gap-2 bg-white border-2 border-purple-200 text-purple-700 px-6 py-2.5 rounded-xl font-semibold hover:bg-purple-50 transition-all"
+                  >
+                    <Download size={16} />
+                    Proses Dokumen Lainnya
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleRearrange}
+                    disabled={pages.length === 0}
+                    className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20 disabled:shadow-none"
+                  >
+                    <Download size={16} />
+                    Simpan & Download
+                  </button>
+                )}
               </div>
             )}
           </>
