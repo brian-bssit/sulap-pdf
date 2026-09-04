@@ -53,9 +53,20 @@ export default function AuditTable() {
   const [data, setData] = useState<AuditResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [actionFilter, setActionFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
+
+  // Search dieksekusi server-side (ILIKE) supaya kena SEMUA data, bukan cuma
+  // 20 baris halaman aktif. Debounce biar tak spam request per keystroke.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -63,26 +74,26 @@ export default function AuditTable() {
       const params: Record<string, string | number> = { page, per_page: 20 };
       if (actionFilter) params.action = actionFilter;
       if (statusFilter) params.status = statusFilter;
+      if (debouncedSearch) params.search = debouncedSearch;
 
       const res = await api.get("/api/admin/audit-logs", { params });
       setData(res.data);
     } catch {
-      // 403/401 handled by axios interceptor
+      // 401/403 → interceptor redirect ke login
     } finally {
       setLoading(false);
     }
-  }, [page, actionFilter, statusFilter]);
+  }, [page, actionFilter, statusFilter, debouncedSearch]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const filteredData = data?.data.filter(
-    (row) => !search || row.user_email.toLowerCase().includes(search.toLowerCase())
-  ) || [];
+  const rows = data?.data ?? [];
 
   const handleExport = () => {
     const params: Record<string, string> = {};
     if (actionFilter) params.action = actionFilter;
     if (statusFilter) params.status = statusFilter;
+    if (debouncedSearch) params.search = debouncedSearch;
     const qs = new URLSearchParams(params).toString();
     window.open(`/api/admin/audit-logs/csv?${qs}`, "_blank");
   };
@@ -114,7 +125,7 @@ export default function AuditTable() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari user email..."
+            placeholder="Cari email / aksi..."
             className="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none bg-white"
           />
         </div>
@@ -131,6 +142,8 @@ export default function AuditTable() {
             <option value="MERGE">MERGE</option>
             <option value="COMPRESS">COMPRESS</option>
             <option value="REARRANGE">REARRANGE</option>
+            <option value="CONVERT">CONVERT</option>
+            <option value="EDIT_OVERLAY">EDIT OVERLAY</option>
             <option value="GOOGLE_LOGIN">GOOGLE_LOGIN</option>
           </select>
         </div>
@@ -171,7 +184,7 @@ export default function AuditTable() {
                   <div className="shimmer-bg h-4 w-48 mx-auto rounded" />
                 </td>
               </tr>
-            ) : filteredData.length === 0 ? (
+            ) : rows.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-6 py-12 text-center">
                   <Search size={40} className="text-slate-300 mx-auto mb-3" />
@@ -179,7 +192,7 @@ export default function AuditTable() {
                 </td>
               </tr>
             ) : (
-              filteredData.map((row) => (
+              rows.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-3.5 whitespace-nowrap text-slate-500 text-xs font-mono">
                     {row.executed_at ? new Date(row.executed_at).toLocaleString("id-ID") : "-"}

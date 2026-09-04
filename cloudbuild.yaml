@@ -48,7 +48,7 @@ steps:
       - '1'
       - '--allow-unauthenticated'
       - '--set-env-vars'
-      - 'LOG_LEVEL=INFO,MAX_FILE_SIZE_MB=30,MAX_PAGES_REARRANGE=200'
+      - 'LOG_LEVEL=INFO,MAX_FILE_SIZE_MB=30,MAX_PAGES_REARRANGE=200,ENVIRONMENT=production'
       - '--set-secrets'
       - 'DATABASE_URL=sulap-db-url:latest,SECRET_KEY=sulap-jwt-secret:latest,GOOGLE_CLIENT_ID=sulap-google-id:latest,FRONTEND_URL=sulap-frontend-url:latest'
 

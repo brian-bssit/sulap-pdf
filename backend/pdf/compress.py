@@ -12,6 +12,7 @@ from config import settings
 from db.database import get_db
 from auth.dependencies import get_current_user
 from audit import log_audit
+from pdf.dl_headers import attachment_filename
 
 logger = logging.getLogger("cloudpdf")
 
@@ -86,18 +87,20 @@ async def compress_pdf(
         pct = round((1 - output_size / input_size) * 100) if input_size else 0
         logger.info(f"Compress {job_id}: {input_size}→{output_size} ({pct}%), {processing_ms}ms")
 
-        output_filename = f"compressed_{file.filename or 'output'}.pdf"
+        stem = Path(file.filename or "document").stem
+        output_filename = f"compressed_{stem}.pdf"
         return StreamingResponse(
             iter([output_data]),
             media_type="application/pdf",
             headers={
-                "Content-Disposition": f'attachment; filename="{output_filename}"',
+                "Content-Disposition": attachment_filename(output_filename),
                 "X-Original-Size": str(input_size),
                 "X-Compressed-Size": str(output_size),
             },
         )
 
-    except HTTPException:
+    except HTTPException as e:
+        await _audit(db, request, user, file, input_size, 0, "FAILED", error_msg=str(e.detail)[:500])
         raise
     except Exception as e:
         logger.error(f"Compress error job={job_id}: {e}")
@@ -113,7 +116,7 @@ async def _audit(db, request, user, file, input_size, output_size, status, proce
         user_id=str(user.id), user_email=user.email,
         action="COMPRESS",
         source_files=[file.filename or "unknown"],
-        result_file=f"compressed_{file.filename or 'output'}.pdf" if status == "SUCCESS" else None,
+        result_file=f"compressed_{Path(file.filename or 'document').stem}.pdf" if status == "SUCCESS" else None,
         file_sizes=[input_size],
         result_size=output_size if status == "SUCCESS" else None,
         processing_ms=processing_ms,

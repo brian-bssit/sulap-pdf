@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { UploadCloud, FileText, X, FileUp } from "lucide-react";
 import api from "@/lib/api";
+import { downloadBlob } from "@/lib/download";
+import { errorDetail } from "@/lib/error";
+import { formatBytes } from "@/lib/format";
 import LoadingOverlay from "./LoadingOverlay";
 import SecurityFooter from "./SecurityFooter";
 
@@ -10,13 +13,6 @@ const ACCEPT_TYPES = [
   ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
   ".odt", ".ods", ".odp", ".rtf", ".txt", ".html", ".htm", ".csv", ".xml",
 ].join(",");
-
-function formatBytes(bytes: number): string {
-  if (!bytes) return "0 Bytes";
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + " " + sizes[i];
-}
 
 function getFileIcon(ext: string): string {
   const map: Record<string, string> = {
@@ -61,26 +57,11 @@ export default function ConvertTool() {
       setResult({ original: originalSize, converted: convertedSize });
 
       const stem = file.name.replace(/\.[^/.]+$/, "");
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${stem}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      downloadBlob(response.data as Blob, response.headers["content-disposition"] as string, `${stem}.pdf`);
     } catch (err: unknown) {
-      let msg = "Gagal memproses. Coba lagi.";
-      if (err && typeof err === "object" && "response" in err) {
-        const r = (err as { response: { status: number; data: Blob } }).response;
-        try {
-          const txt = await r.data.text();
-          msg = `[${r.status}] ${txt}`;
-        } catch {
-          msg = `[${r.status}] Gagal membaca error`;
-        }
-      }
-      setError(msg);
+      const status = (err as { response?: { status?: number } }).response?.status;
+      const detail = errorDetail(err);
+      setError(detail ? `[${status}] ${detail}` : "Gagal memproses. Coba lagi.");
     } finally {
       setProcessing(false);
     }

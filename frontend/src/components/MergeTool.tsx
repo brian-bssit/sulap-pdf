@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { UploadCloud, FileText, Trash2, GripVertical, Layers } from "lucide-react";
 import api from "@/lib/api";
+import { downloadBlob } from "@/lib/download";
+import { formatBytes } from "@/lib/format";
 import LoadingOverlay from "./LoadingOverlay";
 import SecurityFooter from "./SecurityFooter";
 
@@ -11,13 +13,6 @@ interface MergeFile {
   name: string;
   size: number;
   file: File;
-}
-
-function formatBytes(bytes: number): string {
-  if (!bytes) return "0 Bytes";
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + " " + sizes[i];
 }
 
 export default function MergeTool() {
@@ -33,28 +28,43 @@ export default function MergeTool() {
       setError("Maksimal 10 file");
       return;
     }
-    const merged = [
-      ...files,
+    setFiles((prev) => [
+      ...prev,
       ...arr.map((f) => ({ id: Math.random().toString(36).slice(2), name: f.name, size: f.size, file: f })),
-    ];
-    setFiles(merged);
+    ]);
     setError(null);
     setSuccess(false);
   };
 
-  const removeFile = (id: string) => setFiles(files.filter((f) => f.id !== id));
+  const removeFile = (id: string) => setFiles((prev) => prev.filter((f) => f.id !== id));
 
-  const onDragStart = (idx: number) => setDragIdx(idx);
+  // dragIdx via ref: banyak event dragover bisa menumpuk dlm satu frame — state
+  // closure basi bikin urutan salah. Ref baca nilai terkini, state hanya utk styling.
+  const dragIdxRef = useRef<number | null>(null);
+
+  const onDragStart = (idx: number) => {
+    dragIdxRef.current = idx;
+    setDragIdx(idx);
+  };
 
   const onDragOver = (e: React.DragEvent, idx: number) => {
     e.preventDefault();
-    if (dragIdx === null || dragIdx === idx) return;
-    const copy = [...files];
-    const item = copy[dragIdx];
-    copy.splice(dragIdx, 1);
-    copy.splice(idx, 0, item);
+    const from = dragIdxRef.current;
+    if (from === null || from === idx) return;
+    setFiles((prev) => {
+      const copy = [...prev];
+      const item = copy[from];
+      copy.splice(from, 1);
+      copy.splice(idx, 0, item);
+      return copy;
+    });
+    dragIdxRef.current = idx;
     setDragIdx(idx);
-    setFiles(copy);
+  };
+
+  const endDrag = () => {
+    dragIdxRef.current = null;
+    setDragIdx(null);
   };
 
   const handleMerge = async () => {
@@ -70,14 +80,7 @@ export default function MergeTool() {
         responseType: "blob",
       });
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "merged.pdf";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      downloadBlob(response.data as Blob, response.headers["content-disposition"] as string, "merged.pdf");
       setSuccess(true);
     } catch (err: unknown) {
       const msg =
@@ -152,7 +155,7 @@ export default function MergeTool() {
                   draggable
                   onDragStart={() => onDragStart(i)}
                   onDragOver={(e) => onDragOver(e, i)}
-                  onDragEnd={() => setDragIdx(null)}
+                  onDragEnd={endDrag}
                   className={`flex items-center justify-between p-3.5 bg-slate-50 border border-slate-200 rounded-xl cursor-move transition-all hover:border-slate-300 hover:shadow-sm ${
                     dragIdx === i ? "opacity-40 border-blue-400 border-dashed" : ""
                   }`}
@@ -210,7 +213,7 @@ export default function MergeTool() {
           ) : (
             <button
               onClick={handleMerge}
-              disabled={files.length < 2}
+              disabled={files.length < 2 || isProcessing}
               className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20 disabled:shadow-none"
             >
               <Layers size={16} />

@@ -1,0 +1,3 @@
+-r requirements.txt
+pytest==8.*
+fonttools>=4.40

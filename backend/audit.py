@@ -23,7 +23,10 @@ async def log_audit(
     error_message: str | None = None,
 ) -> None:
     try:
-        ip = request.client.host if request.client else None
+        # Di belakang proxy (Cloud Run) alamat asli ada di X-Forwarded-For, bukan
+        # request.client (yang IP proxy). Nilai audit-only → spoofable, acceptable.
+        xff = request.headers.get("x-forwarded-for", "")
+        ip = xff.split(",")[0].strip() or (request.client.host if request.client else None)
         ua = request.headers.get("user-agent", "")
         await insert_audit_log(
             db=db,

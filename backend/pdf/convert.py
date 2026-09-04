@@ -13,6 +13,7 @@ from config import settings
 from db.database import get_db
 from auth.dependencies import get_current_user
 from audit import log_audit
+from pdf.dl_headers import attachment_filename
 
 logger = logging.getLogger("cloudpdf")
 
@@ -93,6 +94,9 @@ async def convert_to_pdf(
     safe_ext = _validate_document(file.filename or "unknown", file.content_type, 0)
     input_path = Path(f"/tmp/cpdf_{job_id}_in{safe_ext}")
     output_path = Path(f"/tmp/cpdf_{job_id}_in.pdf")  # LibreOffice output naming
+    # Profil UserInstallation UNIK per job: profil default bersama bikin konflik
+    # lock antar request paralel ("another instance of LibreOffice is running").
+    lo_profile = Path(f"/tmp/cpdf_{job_id}_lo")
     start_time = time.monotonic()
     input_size = 0
 
@@ -111,13 +115,14 @@ async def convert_to_pdf(
 
         if await request.is_disconnected():
             await _audit(db, request, user, file, input_size, 0, "CANCELLED_BY_CLIENT")
-            _cleanup(input_path, output_path)
+            _cleanup(input_path, output_path, lo_profile)
             return StreamingResponse(iter([]), status_code=499)
 
         cmd = [
             _LIBREOFFICE_BIN,
             "--headless",
             "--norestore",
+            "--env:UserInstallation", f"file://{lo_profile}",
             "--convert-to", "pdf",
             "--outdir", str(input_path.parent),
             str(input_path),
@@ -160,20 +165,21 @@ async def convert_to_pdf(
             iter([output_data]),
             media_type="application/pdf",
             headers={
-                "Content-Disposition": f'attachment; filename="{output_filename}"',
+                "Content-Disposition": attachment_filename(output_filename),
                 "X-Original-Size": str(input_size),
                 "X-Converted-Size": str(output_size),
             },
         )
 
-    except HTTPException:
+    except HTTPException as e:
+        await _audit(db, request, user, file, input_size, 0, "FAILED", error_msg=str(e.detail)[:500])
         raise
     except Exception as e:
         logger.error(f"Convert error job={job_id}: {e}")
         await _audit(db, request, user, file, input_size, 0, "FAILED", error_msg=str(e)[:500])
         raise HTTPException(status_code=500, detail="Gagal memproses file")
     finally:
-        _cleanup(input_path, output_path)
+        _cleanup(input_path, output_path, lo_profile)
 
 
 async def _audit(db, request, user, file, input_size, output_size, status, processing_ms=0, error_msg=None):
@@ -196,6 +202,9 @@ async def _audit(db, request, user, file, input_size, output_size, status, proce
 def _cleanup(*paths: Path):
     for p in paths:
         try:
-            p.unlink(missing_ok=True)
+            if p.is_dir():
+                shutil.rmtree(p, ignore_errors=True)
+            else:
+                p.unlink(missing_ok=True)
         except OSError:
             pass

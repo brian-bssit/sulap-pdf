@@ -12,6 +12,7 @@ from db.database import engine
 from db.models import Base
 from router import api_router
 from middleware.error_handler import register_error_handlers
+from middleware.origin import OriginCheckMiddleware
 
 logger = logging.getLogger("cloudpdf")
 
@@ -72,6 +73,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(OriginCheckMiddleware, allowed_origin=settings.frontend_url)
 
 register_error_handlers(app)
 

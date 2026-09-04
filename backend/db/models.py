@@ -28,9 +28,9 @@ class AuditLog(Base):
     __tablename__ = "audit_logs"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
     user_email: Mapped[str] = mapped_column(String(255), nullable=False)
-    action: Mapped[str] = mapped_column(String(50), nullable=False)
+    action: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     source_files: Mapped[list | None] = mapped_column(ARRAY(Text), nullable=True)
     result_file: Mapped[str | None] = mapped_column(String(255), nullable=True)
     file_sizes: Mapped[list | None] = mapped_column(ARRAY(BigInteger), nullable=True)
@@ -40,4 +40,4 @@ class AuditLog(Base):
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     ip_address: Mapped[str | None] = mapped_column(INET, nullable=True)
     user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
-    executed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    executed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, index=True)

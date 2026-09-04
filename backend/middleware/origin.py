@@ -1,9 +1,8 @@
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 
 router = APIRouter()
-
-ALLOWED_ORIGIN = None  # Set from config in production
 
 
 @router.get("/health")
@@ -12,11 +11,19 @@ async def health_check():
     return {"status": "UP"}
 
 
-# Origin validation middleware (applied to mutation endpoints)
-async def validate_origin(request: Request):
-    if request.method in ("GET", "HEAD", "OPTIONS"):
-        return
-    origin = request.headers.get("origin") or request.headers.get("referer", "")
-    if ALLOWED_ORIGIN and origin and not origin.startswith(ALLOWED_ORIGIN):
-        raise HTTPException(status_code=403, detail="Origin not allowed")
-    return
+class OriginCheckMiddleware(BaseHTTPMiddleware):
+    """CSRF-defense: tolak mutation request bila header Origin ada tapi ≠ frontend_url.
+    Origin kosong/tak ada (curl, server-to-server, test) tetap diloloskan — tanpa ambient
+    auth dari browser, tak ada vektor CSRF. GET/HEAD/OPTIONS aman selalu diloloskan."""
+
+    def __init__(self, app, allowed_origin: str | None):
+        super().__init__(app)
+        self._allowed = allowed_origin.rstrip("/") if allowed_origin else None
+
+    async def dispatch(self, request: Request, call_next):
+        if request.method in ("GET", "HEAD", "OPTIONS") or not self._allowed:
+            return await call_next(request)
+        origin = (request.headers.get("origin") or "").rstrip("/")
+        if origin and origin != self._allowed:
+            return JSONResponse(status_code=403, content={"detail": "Origin not allowed"})
+        return await call_next(request)

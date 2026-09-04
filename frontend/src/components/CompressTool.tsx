@@ -3,15 +3,11 @@
 import { useState } from "react";
 import { UploadCloud, FileText, X, Minimize2 } from "lucide-react";
 import api from "@/lib/api";
+import { downloadBlob } from "@/lib/download";
+import { errorDetail } from "@/lib/error";
+import { formatBytes } from "@/lib/format";
 import LoadingOverlay from "./LoadingOverlay";
 import SecurityFooter from "./SecurityFooter";
-
-function formatBytes(bytes: number): string {
-  if (!bytes) return "0 Bytes";
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + " " + sizes[i];
-}
 
 export default function CompressTool() {
   const [file, setFile] = useState<{ name: string; size: number; raw: File } | null>(null);
@@ -47,26 +43,11 @@ export default function CompressTool() {
       setResult({ original: originalSize, compressed: compressedSize });
 
       // Trigger download
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `compressed_${file.name}`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      downloadBlob(response.data as Blob, response.headers["content-disposition"] as string, `compressed_${file.name}`);
     } catch (err: unknown) {
-      let msg = "Gagal memproses. Coba lagi.";
-      if (err && typeof err === "object" && "response" in err) {
-        const r = (err as { response: { status: number; data: Blob } }).response;
-        try {
-          const txt = await r.data.text();
-          msg = `[${r.status}] ${txt}`;
-        } catch {
-          msg = `[${r.status}] Gagal membaca error`;
-        }
-      }
-      setError(msg);
+      const status = (err as { response?: { status?: number } }).response?.status;
+      const detail = errorDetail(err);
+      setError(detail ? `[${status}] ${detail}` : "Gagal memproses. Coba lagi.");
     } finally {
       setProcessing(false);
     }

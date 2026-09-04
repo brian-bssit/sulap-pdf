@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models import User, AuditLog
@@ -79,6 +79,7 @@ async def get_audit_logs(
     user_id: uuid.UUID | None = None,
     action: str | None = None,
     status: str | None = None,
+    search: str | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     page: int = 1,
@@ -91,6 +92,19 @@ async def get_audit_logs(
         conditions.append(AuditLog.action == action)
     if status:
         conditions.append(AuditLog.status == status)
+    if search:
+        # ILIKE server-side (bukan filter client yang cuma kena halaman aktif).
+        # Escape wildcard LIKE biar input user tak jadi pola.
+        s = search.strip()
+        if s:
+            esc = s.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            like = f"%{esc}%"
+            conditions.append(
+                or_(
+                    AuditLog.user_email.ilike(like, escape="\\"),
+                    AuditLog.action.ilike(like, escape="\\"),
+                )
+            )
     if date_from:
         conditions.append(AuditLog.executed_at >= date_from)
     if date_to:

@@ -12,18 +12,19 @@ import {
   ShieldCheck,
   Users,
   FileUp,
+  PenTool,
 } from "lucide-react";
-import LoadingOverlay from "@/components/LoadingOverlay";
 import CompressTool from "@/components/CompressTool";
 import MergeTool from "@/components/MergeTool";
 import RearrangeTool from "@/components/RearrangeTool";
 import ConvertTool from "@/components/ConvertTool";
+import EditOverlayTool from "@/components/EditOverlayTool";
 import AuditTable from "@/components/AuditTable";
 import UserManagement from "@/components/UserManagement";
 
 const LOGO_URL = "/bss-logo.jpg";
 
-type Tab = "merge" | "compress" | "rearrange" | "convert" | "admin";
+type Tab = "merge" | "compress" | "rearrange" | "convert" | "edit" | "admin";
 
 interface User {
   name: string;
@@ -38,6 +39,7 @@ const navItems: { id: Tab; label: string; icon: React.ReactNode; roles: string[]
   { id: "merge", label: "Merge PDF", icon: <Layers size={20} />, roles: ["user", "admin"] },
   { id: "rearrange", label: "Rearrange PDF", icon: <Grid3x3 size={20} />, roles: ["user", "admin"] },
   { id: "convert", label: "Convert to PDF", icon: <FileUp size={20} />, roles: ["user", "admin"] },
+  { id: "edit", label: "Edit PDF", icon: <PenTool size={20} />, roles: ["user", "admin"] },
   { id: "admin", label: "Admin Panel", icon: <ShieldAlert size={20} />, roles: ["admin"] },
 ];
 
@@ -46,6 +48,7 @@ const pageTitles: Record<Tab, { title: string; subtitle: string }> = {
   compress: { title: "Kompres PDF", subtitle: "Kurangi ukuran file PDF tanpa kehilangan kualitas" },
   rearrange: { title: "Atur Ulang PDF", subtitle: "Ubah urutan, hapus, atau putar halaman PDF" },
   convert: { title: "Konversi ke PDF", subtitle: "Ubah dokumen apapun menjadi PDF — DOCX, XLSX, PPTX, dan lainnya" },
+  edit: { title: "Edit PDF", subtitle: "Tambah teks, stempel, dan highlight di atas halaman PDF" },
   admin: { title: "Admin Panel", subtitle: "User management & audit logs" },
 };
 
@@ -71,15 +74,22 @@ export default function DashboardPage() {
     router.push("/");
   };
 
+  // Pindahkan fokus ke judul setelah ganti tab → user keyboard/SR tahu konten berubah.
+  const focusPageTitle = () => {
+    requestAnimationFrame(() => {
+      document.getElementById("page-title")?.focus({ preventScroll: true });
+    });
+  };
+
   const filteredNav = navItems.filter((item) => item.roles.includes(user.role));
   const { title, subtitle } = pageTitles[activeTab];
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
-      {false && <LoadingOverlay />}
-
       {/* Sidebar */}
       <aside
+        id="dashboard-sidebar"
+        aria-label="Menu navigasi"
         className={`fixed md:static inset-y-0 left-0 z-40 w-72 bg-white border-r border-slate-200/80 transform transition-transform duration-300 ease-in-out flex flex-col shadow-xl md:shadow-none ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
@@ -90,7 +100,7 @@ export default function DashboardPage() {
             <img src={LOGO_URL} alt="BSS Logo" className="h-14 object-contain" />
             <div>
               <span className="text-lg font-bold text-slate-800 tracking-tight">SULAP PDF</span>
-              <span className="block text-[10px] text-slate-400 font-medium uppercase tracking-wider">
+              <span className="block text-[11px] text-slate-500 font-medium uppercase tracking-wider">
                 SULAP PDF v1.0
               </span>
             </div>
@@ -99,15 +109,18 @@ export default function DashboardPage() {
 
         {/* Navigation */}
         <div className="flex-1 py-4 px-3 space-y-1 overflow-y-auto scrollbar-thin">
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-3">
+          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3 px-3">
             Menu Utama
           </div>
           {filteredNav.map((item) => (
             <button
               key={item.id}
+              type="button"
+              aria-current={activeTab === item.id ? "page" : undefined}
               onClick={() => {
                 setActiveTab(item.id);
                 setMobileMenuOpen(false);
+                focusPageTitle();
               }}
               className={`w-full flex items-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                 activeTab === item.id
@@ -156,13 +169,17 @@ export default function DashboardPage() {
         <header className="h-16 bg-white/80 glass-effect border-b border-slate-200/80 flex items-center px-4 md:px-8 justify-between flex-shrink-0">
           <div className="flex items-center gap-4">
             <button
+              type="button"
               onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label={isMobileMenuOpen ? "Tutup menu navigasi" : "Buka menu navigasi"}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="dashboard-sidebar"
               className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
             >
               <Menu size={20} />
             </button>
             <div>
-              <h2 className="text-lg font-bold text-slate-800">{title}</h2>
+              <h2 id="page-title" tabIndex={-1} className="text-lg font-bold text-slate-800">{title}</h2>
               <p className="text-xs text-slate-500 hidden sm:block">{subtitle}</p>
             </div>
           </div>
@@ -214,6 +231,8 @@ function DashboardContent({ tab }: { tab: Tab }) {
       return <RearrangeTool />;
     case "convert":
       return <ConvertTool />;
+    case "edit":
+      return <EditOverlayTool />;
     case "admin":
       return <AdminPanel />;
   }

@@ -17,8 +17,14 @@ COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ .
 COPY --from=frontend /app/out/ ./static/
+# Jangan jalan sebagai root. PDF tools (qpdf/soffice) dipicu subprocess — privilege
+# terkecil mengurangi dampak kalau ada celah. Output sementara selalu di /tmp.
+RUN groupadd -r app && useradd -r -g app app \
+    && chown -R app:app /app /tmp \
+    && mkdir -p /home/app && chown app:app /home/app
+ENV HOME=/home/app PYTHONUNBUFFERED=1
+USER app
 EXPOSE 8080
-ENV PYTHONUNBUFFERED=1
 HEALTHCHECK --interval=5s --timeout=3s --retries=3 \
   CMD curl -f http://localhost:${PORT:-8080}/api/health || exit 1
 CMD exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}

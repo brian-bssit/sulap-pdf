@@ -1,4 +1,10 @@
+import hashlib
+import hmac
+import logging
+import secrets
+import time
 import uuid
+
 from fastapi import APIRouter, Request, Depends, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,9 +14,6 @@ from db.database import get_db
 from db.queries import get_user_by_google_sub, create_user, update_last_login
 from auth.jwt import create_token
 from audit import log_audit
-
-import secrets
-import logging
 
 try:
     from google.auth.transport.requests import Request as GoogleRequest
@@ -38,7 +41,31 @@ if settings.google_client_id and settings.google_client_secret:
         client_kwargs={"scope": "openid email profile"},
     )
 
-_pending_states: dict[str, str] = {}
+_STATE_TTL_SECONDS = 600
+
+
+def _new_state() -> str:
+    """State OAuth stateless (HMAC + timestamp) — tanpa dict in-memory, aman
+    multi-instance (Cloud Run), tanpa leak memori."""
+    ts = int(time.time())
+    nonce = secrets.token_hex(8)
+    msg = f"{ts}.{nonce}".encode()
+    sig = hmac.new(settings.secret_key.encode(), msg, hashlib.sha256).hexdigest()
+    return f"{ts}.{nonce}.{sig}"
+
+
+def _valid_state(state: str | None) -> bool:
+    try:
+        ts, nonce, sig = str(state).split(".")
+    except ValueError:
+        return False
+    if not (ts.isdigit() and nonce and sig):
+        return False
+    msg = f"{ts}.{nonce}".encode()
+    expect = hmac.new(settings.secret_key.encode(), msg, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expect, sig):
+        return False
+    return (time.time() - int(ts)) < _STATE_TTL_SECONDS
 
 
 def _set_jwt_cookie(response, token: str):
@@ -56,10 +83,11 @@ def _set_jwt_cookie(response, token: str):
 @router.get("/google/login")
 async def google_login(request: Request):
     if not oauth:
-        # Dev fallback: redirect to dev-login
-        return RedirectResponse(url="/api/auth/dev/login")
-    state = secrets.token_urlsafe(32)
-    _pending_states[state] = "pending"
+        if settings.dev_login_enabled:
+            # Dev fallback: redirect to dev-login
+            return RedirectResponse(url="/api/auth/dev/login")
+        raise HTTPException(status_code=404, detail="Google login tidak dikonfigurasi")
+    state = _new_state()
     redirect_uri = str(request.url_for("google_callback"))
     return await oauth.google.authorize_redirect(request, redirect_uri, state=state)
 
@@ -70,11 +98,9 @@ async def google_callback(request: Request, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=400, detail="OAuth not configured")
 
     state = request.query_params.get("state")
-    if not state or state not in _pending_states:
-        logger.warning("OAuth callback: invalid or missing state parameter")
+    if not _valid_state(state):
+        logger.warning("OAuth callback: invalid or stale state parameter")
         return RedirectResponse(url=f"{settings.frontend_url}/?error=invalid_state")
-
-    _pending_states.pop(state, None)
 
     try:
         token = await oauth.google.authorize_access_token(request)
@@ -116,13 +142,13 @@ async def google_callback(request: Request, db: AsyncSession = Depends(get_db)):
         return RedirectResponse(url=f"/?error=auth_failed")
 
 
-# ── Dev auth bypass (only when GOOGLE_CLIENT_ID is empty) ──
+# ── Dev auth bypass (hanya bila DEV_LOGIN=true) ──
 
 @router.get("/dev/login")
 async def dev_login(request: Request, db: AsyncSession = Depends(get_db)):
     """Dev-only: auto-login tanpa Google OAuth."""
-    if oauth:
-        raise HTTPException(status_code=404, detail="Not available in production")
+    if not settings.dev_login_enabled:
+        raise HTTPException(status_code=404, detail="Not available")
 
     dev_email = request.query_params.get("email", "dev@cloudpdf.local")
     dev_name = request.query_params.get("name", "Dev User")

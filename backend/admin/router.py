@@ -1,10 +1,11 @@
 import csv
 import io
+import uuid
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, Query, HTTPException
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.database import get_db
@@ -15,15 +16,33 @@ from auth.dependencies import get_current_admin_user
 router = APIRouter()
 
 
+def _uuid_or_400(user_id: str) -> uuid.UUID:
+    try:
+        return uuid.UUID(user_id)
+    except (ValueError, AttributeError, TypeError):
+        raise HTTPException(status_code=400, detail="user_id bukan UUID yang valid")
+
+
+def _uuid_or_none_400(user_id: str | None) -> uuid.UUID | None:
+    if user_id is None:
+        return None
+    return _uuid_or_400(user_id)
+
+
 # ── User Management ──
 
 @router.get("/users")
 async def list_users(
     db: AsyncSession = Depends(get_db),
     admin=Depends(get_current_admin_user),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(200, ge=1, le=500),
 ):
-    """List all registered users."""
-    result = await db.execute(select(User).order_by(User.created_at.desc()))
+    """List registered users (paginated). Shape tetap utk kompatibilitas client."""
+    total = (await db.execute(select(func.count(User.id)))).scalar() or 0
+    result = await db.execute(
+        select(User).order_by(User.created_at.desc()).offset((page - 1) * per_page).limit(per_page)
+    )
     users = result.scalars().all()
     return {
         "data": [
@@ -38,7 +57,7 @@ async def list_users(
             }
             for u in users
         ],
-        "total": len(users),
+        "total": total,
     }
 
 
@@ -50,7 +69,25 @@ async def upgrade_user_role(
     admin=Depends(get_current_admin_user),
 ):
     """Upgrade/downgrade user role. Admin only."""
-    await db.execute(update(User).where(User.id == user_id).values(role=role))
+    uid = _uuid_or_400(user_id)
+    user = (await db.execute(select(User).where(User.id == uid))).scalar_one_or_none()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User tidak ditemukan")
+
+    if role == "user" and user.role == "admin":
+        admin_count = (
+            await db.execute(
+                select(func.count()).select_from(User).where(
+                    User.role == "admin", User.is_active.is_(True)
+                )
+            )
+        ).scalar_one()
+        if admin_count <= 1:
+            raise HTTPException(
+                status_code=400, detail="Tidak bisa menurunkan admin terakhir yang aktif"
+            )
+
+    await db.execute(update(User).where(User.id == uid).values(role=role))
     await db.commit()
     return {"status": "ok", "user_id": user_id, "role": role}
 
@@ -63,6 +100,7 @@ async def list_audit_logs(
     user_id: str | None = Query(None),
     action: str | None = Query(None),
     status: str | None = Query(None),
+    search: str | None = Query(None),
     date_from: str | None = Query(None),
     date_to: str | None = Query(None),
     page: int = Query(1, ge=1),
@@ -71,6 +109,7 @@ async def list_audit_logs(
     user=Depends(get_current_admin_user),
 ):
     """Paginated audit log list with filters."""
+    uid = _uuid_or_none_400(user_id)
     from_date = _parse_date(date_from) if date_from else None
     to_date = _parse_date(date_to) if date_to else None
     if to_date:
@@ -78,9 +117,10 @@ async def list_audit_logs(
 
     rows, total = await get_audit_logs(
         db=db,
-        user_id=user_id,
+        user_id=uid,
         action=action,
         status=status,
+        search=search,
         date_from=from_date,
         date_to=to_date,
         page=page,
@@ -101,12 +141,14 @@ async def export_audit_logs_csv(
     user_id: str | None = Query(None),
     action: str | None = Query(None),
     status: str | None = Query(None),
+    search: str | None = Query(None),
     date_from: str | None = Query(None),
     date_to: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     user=Depends(get_current_admin_user),
 ):
     """Export audit logs as CSV."""
+    uid = _uuid_or_none_400(user_id)
     from_date = _parse_date(date_from) if date_from else None
     to_date = _parse_date(date_to) if date_to else None
     if to_date:
@@ -114,9 +156,10 @@ async def export_audit_logs_csv(
 
     rows, _ = await get_audit_logs(
         db=db,
-        user_id=user_id,
+        user_id=uid,
         action=action,
         status=status,
+        search=search,
         date_from=from_date,
         date_to=to_date,
         page=1,

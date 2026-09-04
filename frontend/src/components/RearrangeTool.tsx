@@ -4,24 +4,19 @@ import { useState, useRef, useCallback } from "react";
 import { UploadCloud, FileText, RotateCw, Trash2, Download, Grid3x3, Loader2 } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import api from "@/lib/api";
+import { downloadBlob } from "@/lib/download";
+import { formatBytes } from "@/lib/format";
 import LoadingOverlay from "./LoadingOverlay";
 import SecurityFooter from "./SecurityFooter";
 
-// Use bundled worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs`;
+// Worker self-host (public/pdf.worker.min.mjs) — no CDN runtime dep.
+pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 interface PageInfo {
   id: number;
   originalIndex: number;
   rotation: number;
   imageUrl: string | null;
-}
-
-function formatBytes(bytes: number): string {
-  if (!bytes) return "0 Bytes";
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + " " + sizes[i];
 }
 
 export default function RearrangeTool() {
@@ -158,14 +153,7 @@ export default function RearrangeTool() {
         responseType: "blob",
       });
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `rearranged_${file.name}`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      downloadBlob(response.data as Blob, response.headers["content-disposition"] as string, `rearranged_${file.name}`);
       setSuccess(true);
     } catch (err: unknown) {
       const msg =
@@ -358,7 +346,7 @@ export default function RearrangeTool() {
                 ) : (
                   <button
                     onClick={handleRearrange}
-                    disabled={pages.length === 0}
+                    disabled={pages.length === 0 || isProcessing}
                     className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20 disabled:shadow-none"
                   >
                     <Download size={16} />

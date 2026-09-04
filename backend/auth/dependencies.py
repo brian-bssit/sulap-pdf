@@ -21,8 +21,13 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
     user_id = payload.get("user_id")
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid token payload")
+    try:
+        uid = uuid.UUID(user_id)
+    except (ValueError, TypeError, AttributeError):
+        # Token disusun buruk / palsu — ini urusan auth, bukan 400 yang memantulkan nilai.
+        raise HTTPException(status_code=401, detail="Invalid token payload")
 
-    user = await get_user_by_id(db, uuid.UUID(user_id))
+    user = await get_user_by_id(db, uid)
     if not user or not user.is_active:
         raise HTTPException(status_code=401, detail="User not found or inactive")
 
