@@ -28,9 +28,12 @@ import SecurityFooter from "./SecurityFooter";
 pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 // Must match whitelist in backend/pdf/edit_overlay.py (ALL_FONTS).
-const BASE14_FONTS = ["Helvetica", "Helvetica-Bold", "Helvetica-Oblique", "Times-Roman", "Times-Bold", "Times-Italic", "Courier", "Courier-Bold"];
-const OPEN_LICENSE_FONTS = ["Lato", "DejaVu Sans", "DejaVu Serif", "DejaVu Sans Mono"];
-const ALL_FONTS = [...BASE14_FONTS, ...OPEN_LICENSE_FONTS];
+// Satu daftar datar — semua font setara, tanpa pengelompokan "standar"/"open license".
+const ALL_FONTS = [
+  "Helvetica", "Helvetica-Bold", "Helvetica-Oblique", "Times-Roman", "Times-Bold",
+  "Times-Italic", "Courier", "Courier-Bold", "Lato", "DejaVu Sans", "DejaVu Serif",
+  "DejaVu Sans Mono",
+];
 const FONT_SET = new Set(ALL_FONTS);
 // Backend whitelist menolak font tak dikenal (400). Clamp nilai basi/hantu ke
 // Helvetica supaya op lama tak gagal kirim.
@@ -699,12 +702,7 @@ export default function EditOverlayTool() {
                       }}
                       className="border border-slate-300 rounded-lg px-2 py-1.5 text-slate-700"
                     >
-                      <optgroup label="Font standar">
-                        {BASE14_FONTS.map((f) => <option key={f} value={f}>{f}</option>)}
-                      </optgroup>
-                      <optgroup label="Font gratis (open license)">
-                        {OPEN_LICENSE_FONTS.map((f) => <option key={f} value={f}>{f}</option>)}
-                      </optgroup>
+                      {ALL_FONTS.map((f) => <option key={f} value={f}>{f}</option>)}
                     </select>
                   </label>
                   <label className="flex items-center gap-2 text-xs text-slate-600">
