@@ -109,9 +109,6 @@ export default function DashboardPage() {
 
         {/* Navigation */}
         <div className="flex-1 py-4 px-3 space-y-1 overflow-y-auto scrollbar-thin">
-          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3 px-3">
-            Menu Utama
-          </div>
           {filteredNav.map((item) => (
             <button
               key={item.id}
