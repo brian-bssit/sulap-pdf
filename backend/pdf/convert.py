@@ -22,6 +22,22 @@ router = APIRouter()
 # soffice (macOS/universal) preferred, libreoffice (Linux wrapper) fallback
 _LIBREOFFICE_BIN = "soffice" if shutil.which("soffice") else "libreoffice"
 
+
+def _build_convert_cmd(lo_profile: Path, input_path: Path) -> list[str]:
+    """Argv soffice headless. Profil UserInstallation unik per-job (cegah konflik lock
+    antar request paralel). WAJIB satu token `-env:X=Y` (strip TUNGGAL, nilai menyatu
+    dengan =): bentuk `--env:` dua strip / dua token terpisah ditolak LibreOffice
+    ("Error in option") — regresi ini sempat lolos ke produksi."""
+    return [
+        _LIBREOFFICE_BIN,
+        "--headless",
+        "--norestore",
+        f"-env:UserInstallation=file://{lo_profile}",
+        "--convert-to", "pdf",
+        "--outdir", str(input_path.parent),
+        str(input_path),
+    ]
+
 # MIME → recommended extension (fallback kalau browser kirim generic MIME)
 _MIME_TO_EXT: dict[str, str] = {
     "application/msword": ".doc",
@@ -118,15 +134,7 @@ async def convert_to_pdf(
             _cleanup(input_path, output_path, lo_profile)
             return StreamingResponse(iter([]), status_code=499)
 
-        cmd = [
-            _LIBREOFFICE_BIN,
-            "--headless",
-            "--norestore",
-            "--env:UserInstallation", f"file://{lo_profile}",
-            "--convert-to", "pdf",
-            "--outdir", str(input_path.parent),
-            str(input_path),
-        ]
+        cmd = _build_convert_cmd(lo_profile, input_path)
 
         process = await asyncio.create_subprocess_exec(
             *cmd,
