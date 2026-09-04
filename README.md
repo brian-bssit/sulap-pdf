@@ -62,7 +62,7 @@ Internal document processing toolkit for Bank Sahabat Sampoerna. Stateless, zero
 |:---|:---|
 | **Engine** | `pikepdf` (MPL 2.0) — content-stream append, no rasterization |
 | **Input** | 1 PDF file, max 30 MB, up to 200 pages |
-| **UX** | WYSIWYG canvas (pdfjs): click to place teks / stempel (APPROVED, DRAFT…) / highlight, drag to move, font Base-14, warna, opacity |
+| **UX** | WYSIWYG canvas (pdfjs): click to place teks / stempel (APPROVED, DRAFT…) / highlight, drag to move, warna, opacity. Font: Base-14 + open-license **Lato / DejaVu** (di-embed `/FontFile2` agar render identik di semua viewer; metadata di `pdf/font_data.py`, digenerate `tools/build_font_data.py`) |
 | **Safety** | Catalog scrub (removes `/OpenAction`, JS `/Names`, `/EmbeddedFiles`, `/AA`); stamp identity (author + timestamp) injected server-side |
 | **Output** | Streamed PDF, `X-Original-Size` / `X-Edited-Size` / `X-Overlay-Count` headers |
 
@@ -78,9 +78,9 @@ Internal document processing toolkit for Bank Sahabat Sampoerna. Stateless, zero
 ### Admin Dashboard
 | | |
 |:---|:---|
-| **Audit Logs** | Table view with filters: user, action, date range, status |
-| **User Management** | View registered users, promote/demote admin role |
-| **Export** | CSV download based on active filters |
+| **Audit Logs** | Table view, server-side search (email/aksi, wildcard di-escape) + filters: user, action, status, date range; paginated |
+| **User Management** | View registered users (paginated `{data,total}`), promote/demote admin role |
+| **Export** | CSV download mengikuti filter + search aktif (BOM UTF-8 utk Excel) |
 | **Access** | Admin role only (`user.role == "admin"`), role-gated in sidebar |
 
 ### Security & Compliance
@@ -89,6 +89,10 @@ Internal document processing toolkit for Bank Sahabat Sampoerna. Stateless, zero
 - **JWT cookie** — `SameSite=Strict`, `HttpOnly`, 7-day expiry (`Secure` when served over HTTPS)
 - **Single-origin CORS** — only `FRONTEND_URL` is allowlisted (`allow_origins` + `allow_credentials`)
 - **Role gating** — `/api/admin/*` requires `role == "admin"` (`get_current_admin_user`)
+- **Origin check** — `OriginCheckMiddleware` menolak request lintas-origin (`Origin`/`Referer` ≠ `FRONTEND_URL`); CSRF defense di sisi API
+- **Dev-login gerbang eksplisit** — `/api/auth/dev/login` aktif HANYA jika `ENVIRONMENT != production` **dan** `DEV_LOGIN_ENABLED=true`; tak pernah disimpulkan dari keberadaan OAuth
+- **Fail-fast secret** — `ENVIRONMENT=production` + `SECRET_KEY` default/kosong → start gagal (JWT ditandatangani key publik = forge token admin)
+- **Audit IP proxy-aware** — IP klien dari entry pertama `X-Forwarded-For` (audit-grade); error klien 4xx juga dicatat `FAILED`
 - **Client disconnect** — `request.is_disconnected()` aborts processing, cleans `/tmp`, logs `CANCELLED_BY_CLIENT`
 - **Audit trail** — every operation logged: who, what, when, source files, result size, duration, IP, user-agent, status
 
@@ -118,7 +122,7 @@ Internal document processing toolkit for Bank Sahabat Sampoerna. Stateless, zero
 
 ```
 pdf-super/
-├── Dockerfile                  # Multi-stage: Node build + Python runtime
+├── Dockerfile                  # Multi-stage: Node build → Python runtime (non-root `app`)
 ├── docker-compose.yml          # Local dev: app + PostgreSQL
 ├── cloudbuild.yaml             # CI/CD: build → push → deploy to Cloud Run
 ├── .env.example                # Environment variable template
@@ -140,7 +144,10 @@ pdf-super/
 │   │   ├── merge.py            # POST /api/pdf/merge (pypdf)
 │   │   ├── rearrange.py        # POST /api/pdf/rearrange (pypdf)
 │   │   ├── convert.py          # POST /api/pdf/convert (LibreOffice)
-│   │   └── edit_overlay.py     # POST /api/pdf/edit-overlay (pikepdf)
+│   │   ├── edit_overlay.py     # POST /api/pdf/edit-overlay (pikepdf)
+│   │   ├── dl_headers.py       # Content-Disposition: ASCII fallback + RFC5987 (anti header injection)
+│   │   ├── font_data.py        # Metadata font open-license (Lato/DejaVu) + subset
+│   │   └── fonts/              # .ttf + LICENSE di-commit (aset statis, dibaca sekali per proses)
 │   ├── admin/
 │   │   └── router.py           # GET /api/admin/audit-logs, /api/admin/users
 │   ├── db/
@@ -150,6 +157,8 @@ pdf-super/
 │   ├── middleware/
 │   │   ├── error_handler.py    # Global exception → JSONResponse
 │   │   └── origin.py           # Origin/Referer validation + health endpoint
+│   ├── tools/
+│   │   └── build_font_data.py  # Generator font_data.py dari .ttf (`--check` utk sinkronisasi)
 │   └── static/                 # Frontend build output (served by FastAPI)
 │
 ├── frontend/
@@ -158,6 +167,7 @@ pdf-super/
 │   │   │   ├── layout.tsx      # Root layout
 │   │   │   ├── page.tsx        # Landing/login page
 │   │   │   ├── globals.css     # Tailwind + custom styles
+│   │   │   ├── favicon.ico
 │   │   │   └── dashboard/
 │   │   │       └── page.tsx    # Dashboard shell: sidebar + role-filtered tabs (incl. AdminPanel)
 │   │   ├── components/
@@ -171,7 +181,12 @@ pdf-super/
 │   │   │   ├── AuditTable.tsx
 │   │   │   └── UserManagement.tsx
 │   │   └── lib/
-│   │       └── api.ts          # Axios instance (10-min timeout, credentials)
+│   │       ├── api.ts          # Axios: timeout, credentials, interceptor 401→/login, parse blob error
+│   │       ├── download.ts     # filenameFromDisposition (RFC5987) + downloadBlob
+│   │       ├── error.ts        # errorDetail: detail string/array/object → teks
+│   │       └── format.ts       # formatBytes (dipakai semua tool)
+│   ├── public/
+│   │   └── pdf.worker.min.mjs  # pdf.js worker self-hosted — tanpa CDN eksternal
 │   ├── next.config.mjs
 │   ├── tailwind.config.ts
 │   └── package.json
@@ -195,7 +210,7 @@ All endpoints prefixed with `/api`. Mutating endpoints require valid JWT cookie.
 | `GET` | `/api/auth/google/callback` | None | OAuth callback |
 | `GET` | `/api/auth/google/config` | None | Client ID for GIS |
 | `POST` | `/api/auth/logout` | None | Clear cookie |
-| `GET` | `/api/auth/dev/login` | None | Dev auto-login (no OAuth) |
+| `GET` | `/api/auth/dev/login` | None | Dev auto-login (no OAuth) — aktif hanya jika `ENVIRONMENT != production` && `DEV_LOGIN_ENABLED=true` |
 
 ### PDF Operations
 | Method | Path | Input | Description |
@@ -209,9 +224,9 @@ All endpoints prefixed with `/api`. Mutating endpoints require valid JWT cookie.
 ### Admin
 | Method | Path | Auth | Description |
 |:---|:---|:---|:---|
-| `GET` | `/api/admin/audit-logs` | Admin JWT | Paginated audit logs with filters |
-| `GET` | `/api/admin/audit-logs/csv` | Admin JWT | Export filtered logs as CSV |
-| `GET` | `/api/admin/users` | Admin JWT | User list |
+| `GET` | `/api/admin/audit-logs` | Admin JWT | Paginated logs; filter `user_id/action/status/search/date_from/date_to` |
+| `GET` | `/api/admin/audit-logs/csv` | Admin JWT | Export logs mengikuti filter + `search` (≤10k baris, BOM) |
+| `GET` | `/api/admin/users` | Admin JWT | User list paginated (`page`/`per_page`) → `{data,total}` |
 | `POST` | `/api/admin/users/{id}/upgrade?role=admin\|user` | Admin JWT | Promote/demote user role |
 
 ### Error Responses
@@ -249,13 +264,13 @@ All endpoints prefixed with `/api`. Mutating endpoints require valid JWT cookie.
 | `id` | BIGINT (PK) | Auto-increment |
 | `user_id` | UUID NULL | FK to users |
 | `user_email` | VARCHAR(255) | Denormalized for fast queries |
-| `action` | VARCHAR(50) | COMPRESS, MERGE, REARRANGE, CONVERT, GOOGLE_LOGIN |
+| `action` | VARCHAR(50) | COMPRESS, MERGE, REARRANGE, CONVERT, EDIT_OVERLAY, GOOGLE_LOGIN |
 | `source_files` | TEXT[] | Original filenames |
 | `result_file` | VARCHAR(255) | Output filename |
 | `file_sizes` | BIGINT[] | Input file sizes in bytes |
 | `result_size` | BIGINT | Output file size in bytes |
 | `processing_ms` | INTEGER | Processing duration |
-| `status` | VARCHAR(20) | SUCCESS, FAILED, CANCELLED_BY_CLIENT |
+| `status` | VARCHAR(20) | SUCCESS, FAILED, CANCELLED_BY_CLIENT (4xx/error operasi → FAILED) |
 | `error_message` | TEXT NULL | Error details if failed |
 | `ip_address` | INET NULL | Client IP |
 | `user_agent` | TEXT NULL | Browser user-agent |
@@ -275,6 +290,8 @@ All config via environment variables (`.env` or Secret Manager).
 | `GOOGLE_CLIENT_SECRET` | No | `""` | Only needed for redirect OAuth fallback |
 | `FRONTEND_URL` | Yes | `http://localhost:8080` | CORS origin + cookie domain |
 | `APP_NAME` | No | `CloudPDF Toolkit` | App display name |
+| `ENVIRONMENT` | No | `development` | `production` → fail-fast jika `SECRET_KEY` default/kosong |
+| `DEV_LOGIN_ENABLED` | No | `false` | Gerbang eksplisit `/api/auth/dev/login` — WAJIB `false` di prod |
 | `LOG_LEVEL` | No | `INFO` | Python logging level |
 | `MAX_FILE_SIZE_MB` | No | `30` | Upload size limit |
 | `REQUEST_TIMEOUT_SECONDS` | No | `600` | Processing timeout |
@@ -311,7 +328,7 @@ cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env  # edit DATABASE_URL, SECRET_KEY, GOOGLE_CLIENT_ID
-uvicorn main:app --reload --port 8080
+uvicorn main:app --port 8080   # --reload opsional utk dev; jangan utk prod
 
 # Frontend (build static, then serve from backend — single origin)
 cd frontend
@@ -327,11 +344,17 @@ cp -r out/* ../backend/static/
 
 ### Dev Auth Bypass
 
-When `GOOGLE_CLIENT_ID` is empty, visit:
+Aktif hanya jika dua-duanya: `ENVIRONMENT` **bukan** `production` dan `DEV_LOGIN_ENABLED=true`.
+Set di `.env`:
+```
+ENVIRONMENT=development
+DEV_LOGIN_ENABLED=true
+```
+Kunjungi:
 ```
 http://localhost:8080/api/auth/dev/login?email=admin@local.dev&role=admin
 ```
-This auto-creates a dev user with specified email and role.
+Auto-create/login user dengan email & role tsb. Jangan nyalakan di production.
 
 ---
 
@@ -389,6 +412,15 @@ Single-request isolation prevents memory exhaustion and `/tmp` filename collisio
 
 **Why `soffice` on macOS, `libreoffice` on Linux?**
 Homebrew installs LibreOffice as `soffice`. Debian packages provide the `libreoffice` wrapper. Auto-detected at import time via `shutil.which()`.
+
+**Why embed Lato/DejaVu instead of only Base-14 fonts?**
+Base-14 rendering bergantung viewer — sebagian reader tak menampilkannya. Overlay teks pakai font open-license yang di-embed (`/FontFile2`, subset WinAnsi) agar hasil identik di semua viewer. Aset `.ttf` + `LICENSE` di-commit; `font_data.py` digenerate `tools/build_font_data.py` (mode `--check` menjaga sinkron).
+
+**Why self-host pdf.js worker?**
+Static export tak bisa andalkan CDN eksternal; worker disalin ke `frontend/public/pdf.worker.min.mjs` dan di-pin via `GlobalWorkerOptions.workerSrc` — satu origin, tanpa CSP pihak ketiga.
+
+**Why per-job soffice profile?**
+LibreOffice headless memakai profil user di `~/.config`; konversi paralel bisa deadlock rebutan lock. Setiap job memakai `--env:UserInstallation=file:///tmp/cpdf_{job}_lo` sendiri → profil terisolasi, dibersihkan di `finally`.
 
 ---
 
