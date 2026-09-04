@@ -133,6 +133,7 @@ pdf-super/
 │   ├── config.py               # Pydantic Settings (env vars)
 │   ├── router.py               # API router aggregator
 │   ├── requirements.txt        # Python dependencies
+│   ├── tests/                  # Unit tests tanpa DB/auth (incl. test_convert_cmd.py — regression gate argv soffice)
 │   ├── audit.py                # Audit log helper
 │   ├── auth/
 │   │   ├── oauth.py            # Google OAuth (redirect + GIS popup), dev bypass
@@ -360,17 +361,22 @@ Auto-create/login user dengan email & role tsb. Jangan nyalakan di production.
 
 ## Deployment
 
-Push to `main` → Cloud Build trigger runs `cloudbuild.yaml`:
+**`git push origin main` adalah SATU-SATUNYA jalur deploy.** Push memicu Cloud Build GitHub
+trigger **`sulap-deploy`** → `cloudbuild.yaml`:
 
 ```
-Docker build → push to Artifact Registry → deploy to Cloud Run
+Docker build → push to Artifact Registry → gcloud run deploy sulap
 ```
 
-### Manual deploy
-
-```bash
-gcloud builds submit --config=cloudbuild.yaml .
-```
+Catatan operasional:
+- Trigger **2nd-gen → regional** (`asia-southeast2`). Inspeksi WAJIB pakai `--region`:
+  `gcloud builds triggers list --project bss-sandbox-project-1 --region asia-southeast2`
+  (list global tak menampilkan trigger regional). UUID di build history = **build ID**, bukan trigger.
+- **Jangan** `gcloud builds submit` utk pekerjaan sehari-hari — itu menciptakan build `triggerId: None`
+  yang tampil sebagai "deploy duplikat" di history (penyebab gejala duplikat dulu; hanya ada SATU
+  trigger, `sulap-deploy`). Untuk redeploy ulang, amend/commit kosong lalu push.
+- Manual submit hanya utk darurat (mis. trigger sedang rusak):
+  `gcloud builds submit --config=cloudbuild.yaml .` — lalu jangan lupa lapor ke tim agar tak menumpuk.
 
 ### Secret Manager setup
 
@@ -420,7 +426,7 @@ Base-14 rendering bergantung viewer — sebagian reader tak menampilkannya. Over
 Static export tak bisa andalkan CDN eksternal; worker disalin ke `frontend/public/pdf.worker.min.mjs` dan di-pin via `GlobalWorkerOptions.workerSrc` — satu origin, tanpa CSP pihak ketiga.
 
 **Why per-job soffice profile?**
-LibreOffice headless memakai profil user di `~/.config`; konversi paralel bisa deadlock rebutan lock. Setiap job memakai `--env:UserInstallation=file:///tmp/cpdf_{job}_lo` sendiri → profil terisolasi, dibersihkan di `finally`.
+LibreOffice headless memakai profil user di `~/.config`; konversi paralel bisa deadlock rebutan lock. Setiap job memakai profil sendiri → terisolasi, dibersihkan di `finally`. Argumen WAJIB satu token `-env:UserInstallation=file:///tmp/cpdf_{job}_lo` (strip TUNGGAL, nilai menyatu via `=`): bentuk `--env:` dua-strip atau nilai token terpisah ditolak LibreOffice (`Error in option`) → semua konversi 422. Itu regresi prod 2026-09 yang sudah diperbaiki; dikunci `tests/test_convert_cmd.py`.
 
 ---
 
