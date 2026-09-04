@@ -1,0 +1,79 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:0e1b0a00-3333-4333-8333-000000000004",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-09-04T00:00:00Z",
+    "tools": [
+      { "name": "ekstraksi name-table TTF (fontTools) + fetch.sh (provenance)", "version": "1.0" }
+    ],
+    "component": {
+      "type": "application",
+      "name": "sulap-pdf-fonts",
+      "version": "0.1.0",
+      "bom-ref": "sulap-pdf-fonts"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "font-lato",
+      "name": "Lato",
+      "version": "2.015",
+      "description": "Diem-bed utuh (bukan subset) ke PDF hasil edit via pikepdf /FontFile2; metadata & license name-table tetap utuh. Berasal dari google/fonts ofl/lato.",
+      "purl": "pkg:generic/lato@2.015",
+      "licenses": [{ "license": { "id": "OFL-1.1" } }],
+      "copyright": "Copyright (c) 2011-2015 by tyPoland Lukasz Dziedzic",
+      "externalReferences": [
+        { "type": "website", "url": "http://www.latofonts.com/" },
+        { "type": "vcs", "url": "https://github.com/google/fonts/tree/main/ofl/lato" }
+      ],
+      "properties": [
+        { "name": "file", "value": "backend/pdf/fonts/lato.ttf" },
+        { "name": "license-file", "value": "backend/pdf/fonts/LICENSE-Lato-OFL.txt" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "font-dejavu-sans",
+      "name": "DejaVu Sans",
+      "version": "2.37",
+      "description": "Diem-bed utuh ke PDF via pikepdf. Berasal dari rilis dejavu-fonts v2.37.",
+      "purl": "pkg:generic/dejavu-sans@2.37",
+      "licenses": [{ "license": { "name": "Bitstream Vera + DejaVu changes (free, custom — lihat LICENSE-DejaVu.txt)" } }],
+      "copyright": "Copyright (c) 2003 by Bitstream, Inc. — Copyright (c) 2006 by Tavmjong Bah / kontributor DejaVu",
+      "externalReferences": [
+        { "type": "website", "url": "https://dejavu-fonts.github.io/" },
+        { "type": "vcs", "url": "https://github.com/dejavu-fonts/dejavu-fonts" }
+      ],
+      "properties": [
+        { "name": "file", "value": "backend/pdf/fonts/dejavu_sans.ttf" },
+        { "name": "license-file", "value": "backend/pdf/fonts/LICENSE-DejaVu.txt" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "font-dejavu-serif",
+      "name": "DejaVu Serif",
+      "version": "2.37",
+      "purl": "pkg:generic/dejavu-serif@2.37",
+      "licenses": [{ "license": { "name": "Bitstream Vera + DejaVu changes (free, custom — lihat LICENSE-DejaVu.txt)" } }],
+      "copyright": "Copyright (c) 2003 by Bitstream, Inc. — Copyright (c) 2006 by Tavmjong Bah / kontributor DejaVu",
+      "properties": [{ "name": "file", "value": "backend/pdf/fonts/dejavu_serif.ttf" }]
+    },
+    {
+      "type": "library",
+      "bom-ref": "font-dejavu-sans-mono",
+      "name": "DejaVu Sans Mono",
+      "version": "2.37",
+      "purl": "pkg:generic/dejavu-sans-mono@2.37",
+      "licenses": [{ "license": { "name": "Bitstream Vera + DejaVu changes (free, custom — lihat LICENSE-DejaVu.txt)" } }],
+      "copyright": "Copyright (c) 2003 by Bitstream, Inc. — Copyright (c) 2006 by Tavmjong Bah / kontributor DejaVu",
+      "properties": [{ "name": "file", "value": "backend/pdf/fonts/dejavu_sans_mono.ttf" }]
+    }
+  ],
+  "dependencies": [
+    { "ref": "sulap-pdf-fonts", "dependsOn": ["font-lato", "font-dejavu-sans", "font-dejavu-serif", "font-dejavu-sans-mono"] }
+  ]
+}

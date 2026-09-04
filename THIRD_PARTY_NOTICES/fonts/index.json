@@ -1,0 +1,50 @@
+{
+  "components": [
+    {
+      "name": "Lato",
+      "version": "2.015",
+      "license": "OFL-1.1",
+      "copyright": "Copyright (c) 2011-2015 by tyPoland Lukasz Dziedzic",
+      "source": "https://github.com/google/fonts/tree/main/ofl/lato",
+      "file": "lato.ttf",
+      "license_file": "Lato-OFL-1.1.txt",
+      "modifications": "none (TTF penuh di-embed, bukan subset)"
+    },
+    {
+      "name": "DejaVu Sans",
+      "version": "2.37",
+      "license": "Bitstream Vera + DejaVu (free, custom — lihat LICENSE)",
+      "copyright": "Copyright (c) 2003 Bitstream Inc. · 2006 Tavmjong Bah & kontributor DejaVu",
+      "source": "https://github.com/dejavu-fonts/dejavu-fonts",
+      "file": "dejavu_sans.ttf",
+      "license_file": "DejaVu.txt",
+      "modifications": "none (TTF penuh di-embed)"
+    },
+    {
+      "name": "DejaVu Serif",
+      "version": "2.37",
+      "license": "Bitstream Vera + DejaVu (free, custom)",
+      "copyright": "Copyright (c) 2003 Bitstream Inc. · 2006 Tavmjong Bah & kontributor DejaVu",
+      "source": "https://github.com/dejavu-fonts/dejavu-fonts",
+      "file": "dejavu_serif.ttf",
+      "license_file": "DejaVu.txt",
+      "modifications": "none (TTF penuh di-embed)"
+    },
+    {
+      "name": "DejaVu Sans Mono",
+      "version": "2.37",
+      "license": "Bitstream Vera + DejaVu (free, custom)",
+      "copyright": "Copyright (c) 2003 Bitstream Inc. · 2006 Tavmjong Bah & kontributor DejaVu",
+      "source": "https://github.com/dejavu-fonts/dejavu-fonts",
+      "file": "dejavu_sans_mono.ttf",
+      "license_file": "DejaVu.txt",
+      "modifications": "none (TTF penuh di-embed)"
+    }
+  ],
+  "embedding_compliance": {
+    "ofl": "OFL-1.1 mengizinkan embedding font dalam dokumen tanpa pembatasan jumlah dokumen; redistribusi font berlisensi OFL harus mempertahankan lisensi & nama reserved. Lato dipakai dengan nama aslinya — dipenuhi.",
+    "metadata_preserved": "TTF di-embed UTUH (bukan subset) via pikepdf /FontFile2 → name-table, metadata, dan informasi lisensi dalam font TIDAK dihapus.",
+    "dejavu_license": "Lisensi DejaVu mengizinkan embedding & penggunaan dokumen; atribusi/license disertakan (DejaVu.txt)."
+  },
+  "provenance": "fetch.sh (backend/pdf/fonts/fetch.sh) — unduh dari google/fonts + dejavu-fonts release v2.37."
+}

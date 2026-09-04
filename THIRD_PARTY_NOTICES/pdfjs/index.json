@@ -1,0 +1,17 @@
+{
+  "component": {
+    "name": "pdf.js (pdfjs-dist)",
+    "version": "4.0.379",
+    "license": "Apache-2.0",
+    "copyright": "Copyright 2023 Mozilla Foundation",
+    "source": "https://github.com/mozilla/pdf.js",
+    "license_file": "LICENSE-Apache-2.0.txt",
+    "full_text": "../_licenses/Apache-2.0.txt"
+  },
+  "modifications": "Tidak ada perubahan kode. Worker (pdf.worker.min.mjs) disalin verbatim dari build npm pdfjs-dist ke frontend/public/pdf.worker.min.mjs (self-hosted).",
+  "apache_obligations": {
+    "license_text": "dipenuhi — LICENSE-Apache-2.0.txt + _licenses/Apache-2.0.txt",
+    "notices": "File NOTICE tidak diterbitkan upstream pdf.js; tidak ada yang perlu disalin.",
+    "source_header": "Header @licstart (Copyright 2023 Mozilla Foundation, Apache-2.0) pada pdf.worker.min.mjs TERVERIFIKASI tetap ada — dilihat saat review 2026-09-04."
+  }
+}

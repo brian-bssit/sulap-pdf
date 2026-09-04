@@ -1,0 +1,4 @@
+client-only 0.0.1
+License: MIT
+Full text: https://reactjs.org/
+(paket tidak menyertakan file LICENSE di distribusi npm.)

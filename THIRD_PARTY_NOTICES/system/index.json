@@ -1,0 +1,33 @@
+[
+  {
+    "name": "Debian GNU/Linux 12 (bookworm) — base python:3.12-slim",
+    "version": "12", "license": "DFSG (per-package)", "license_text": "debian.md",
+    "source": "https://www.debian.org/", "modifications": "none",
+    "status": "OS SBOM transitif pending (syft/trivy di CI)"
+  },
+  {
+    "name": "CPython",
+    "version": "3.12.x", "license": "Python-2.0", "license_text": "debian.md",
+    "source": "https://www.python.org/", "modifications": "none"
+  },
+  {
+    "name": "qpdf",
+    "version": "11.3.0-1+deb12u1", "license": "Apache-2.0", "license_text": "qpdf.md",
+    "full_text": "_licenses/Apache-2.0.txt",
+    "source": "https://qpdf.sourceforge.io", "modifications": "none",
+    "status": "versi apt tidak di-pin"
+  },
+  {
+    "name": "LibreOffice core/writer/calc/impress/draw",
+    "version": "4:7.4.7-1+deb12u14", "license": "MPL-2.0 + LGPL-3.0",
+    "license_text": "libreoffice.md", "full_text": "_licenses/MPL-2.0.txt",
+    "source": "https://www.libreoffice.org/", "modifications": "none",
+    "status": "versi apt tidak di-pin"
+  },
+  {
+    "name": "curl",
+    "version": "7.88.1-10+deb12u5", "license": "curl (MIT-style)",
+    "license_text": "curl.md",
+    "source": "https://curl.se/", "modifications": "none"
+  }
+]

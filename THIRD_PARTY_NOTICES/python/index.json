@@ -1,0 +1,338 @@
+[
+  {
+    "name": "annotated-types",
+    "version": "0.8.0",
+    "license": "MIT",
+    "source": "https://github.com/annotated-types/annotated-types",
+    "modifications": "none"
+  },
+  {
+    "name": "anyio",
+    "version": "4.14.2",
+    "license": "MIT",
+    "source": null,
+    "modifications": "none"
+  },
+  {
+    "name": "asyncpg",
+    "version": "0.30.0",
+    "license": "Apache-2.0",
+    "source": null,
+    "modifications": "none"
+  },
+  {
+    "name": "Authlib",
+    "version": "1.3.2",
+    "license": "BSD-3-Clause",
+    "source": null,
+    "modifications": "none"
+  },
+  {
+    "name": "cachetools",
+    "version": "5.5.2",
+    "license": "MIT",
+    "source": "https://github.com/tkem/cachetools/",
+    "modifications": "none"
+  },
+  {
+    "name": "certifi",
+    "version": "2026.7.22",
+    "license": "MPL-2.0",
+    "source": "https://github.com/certifi/python-certifi",
+    "modifications": "none"
+  },
+  {
+    "name": "cffi",
+    "version": "2.1.0",
+    "license": "MIT-0",
+    "source": null,
+    "modifications": "none"
+  },
+  {
+    "name": "charset-normalizer",
+    "version": "3.4.9",
+    "license": "MIT",
+    "source": null,
+    "modifications": "none"
+  },
+  {
+    "name": "click",
+    "version": "8.4.2",
+    "license": "BSD-3-Clause",
+    "source": null,
+    "modifications": "none"
+  },
+  {
+    "name": "cryptography",
+    "version": "49.0.0",
+    "license": "Apache-2.0 OR BSD-3-Clause",
+    "source": "https://github.com/pyca/cryptography",
+    "modifications": "none"
+  },
+  {
+    "name": "Deprecated",
+    "version": "1.3.1",
+    "license": "MIT",
+    "source": "https://github.com/laurent-laporte-pro/deprecated",
+    "modifications": "none"
+  },
+  {
+    "name": "ecdsa",
+    "version": "0.19.2",
+    "license": "MIT",
+    "source": "http://github.com/tlsfuzzer/python-ecdsa",
+    "modifications": "none"
+  },
+  {
+    "name": "fastapi",
+    "version": "0.115.14",
+    "license": "MIT",
+    "source": "https://github.com/fastapi/fastapi",
+    "modifications": "none"
+  },
+  {
+    "name": "google-auth",
+    "version": "2.35.0",
+    "license": "Apache-2.0",
+    "source": "https://github.com/googleapis/google-auth-library-python",
+    "modifications": "none"
+  },
+  {
+    "name": "greenlet",
+    "version": "3.5.4",
+    "license": "MIT AND PSF-2.0",
+    "source": "https://greenlet.readthedocs.io",
+    "modifications": "none"
+  },
+  {
+    "name": "h11",
+    "version": "0.16.0",
+    "license": "MIT",
+    "source": "https://github.com/python-hyper/h11",
+    "modifications": "none"
+  },
+  {
+    "name": "httpcore",
+    "version": "1.0.9",
+    "license": "BSD-3-Clause",
+    "source": "https://www.encode.io/httpcore/",
+    "modifications": "none"
+  },
+  {
+    "name": "httptools",
+    "version": "0.8.0",
+    "license": "MIT",
+    "source": "https://github.com/MagicStack/httptools",
+    "modifications": "none"
+  },
+  {
+    "name": "httpx",
+    "version": "0.28.1",
+    "license": "BSD-3-Clause",
+    "source": "https://github.com/encode/httpx",
+    "modifications": "none"
+  },
+  {
+    "name": "idna",
+    "version": "3.18",
+    "license": "BSD-3-Clause",
+    "source": null,
+    "modifications": "none"
+  },
+  {
+    "name": "lxml",
+    "version": "6.1.3",
+    "license": "BSD-3-Clause",
+    "source": "https://lxml.de/",
+    "modifications": "none"
+  },
+  {
+    "name": "packaging",
+    "version": "26.3",
+    "license": "Apache-2.0 OR BSD-2-Clause",
+    "source": null,
+    "modifications": "none"
+  },
+  {
+    "name": "pikepdf",
+    "version": "8.15.1",
+    "license": "MPL-2.0",
+    "source": null,
+    "modifications": "none"
+  },
+  {
+    "name": "pillow",
+    "version": "12.3.0",
+    "license": "MIT-CMU",
+    "source": "https://python-pillow.github.io",
+    "modifications": "none"
+  },
+  {
+    "name": "pyasn1",
+    "version": "0.6.4",
+    "license": "BSD-2-Clause",
+    "source": "https://github.com/pyasn1/pyasn1",
+    "modifications": "none"
+  },
+  {
+    "name": "pyasn1_modules",
+    "version": "0.4.2",
+    "license": "BSD-3-Clause",
+    "source": "https://github.com/pyasn1/pyasn1-modules",
+    "modifications": "none"
+  },
+  {
+    "name": "pycparser",
+    "version": "3.0",
+    "license": "BSD-3-Clause",
+    "source": "https://github.com/eliben/pycparser",
+    "modifications": "none"
+  },
+  {
+    "name": "pydantic",
+    "version": "2.13.4",
+    "license": "MIT",
+    "source": "https://github.com/pydantic/pydantic",
+    "modifications": "none"
+  },
+  {
+    "name": "pydantic-settings",
+    "version": "2.6.1",
+    "license": "MIT",
+    "source": "https://github.com/pydantic/pydantic-settings",
+    "modifications": "none"
+  },
+  {
+    "name": "pydantic_core",
+    "version": "2.46.4",
+    "license": "MIT",
+    "source": "https://github.com/pydantic",
+    "modifications": "none"
+  },
+  {
+    "name": "pypdf",
+    "version": "5.1.0",
+    "license": "BSD-3-Clause",
+    "source": null,
+    "modifications": "none"
+  },
+  {
+    "name": "python-dotenv",
+    "version": "1.2.2",
+    "license": "BSD-3-Clause",
+    "source": null,
+    "modifications": "none"
+  },
+  {
+    "name": "python-jose",
+    "version": "3.3.0",
+    "license": "MIT",
+    "source": "http://github.com/mpdavis/python-jose",
+    "modifications": "none"
+  },
+  {
+    "name": "python-multipart",
+    "version": "0.0.32",
+    "license": "Apache-2.0",
+    "source": "https://github.com/Kludex/python-multipart",
+    "modifications": "none"
+  },
+  {
+    "name": "PyYAML",
+    "version": "6.0.3",
+    "license": "MIT",
+    "source": "https://pyyaml.org/",
+    "modifications": "none"
+  },
+  {
+    "name": "requests",
+    "version": "2.32.5",
+    "license": "Apache-2.0",
+    "source": "https://requests.readthedocs.io",
+    "modifications": "none"
+  },
+  {
+    "name": "rsa",
+    "version": "4.9.1",
+    "license": "Apache-2.0",
+    "source": "https://stuvel.eu/rsa",
+    "modifications": "none"
+  },
+  {
+    "name": "six",
+    "version": "1.17.0",
+    "license": "MIT",
+    "source": "https://github.com/benjaminp/six",
+    "modifications": "none"
+  },
+  {
+    "name": "SQLAlchemy",
+    "version": "2.0.51",
+    "license": "MIT",
+    "source": "https://www.sqlalchemy.org",
+    "modifications": "none"
+  },
+  {
+    "name": "starlette",
+    "version": "0.46.2",
+    "license": "BSD-3-Clause",
+    "source": "https://github.com/encode/starlette",
+    "modifications": "none"
+  },
+  {
+    "name": "typing-inspection",
+    "version": "0.4.2",
+    "license": "MIT",
+    "source": "https://github.com/pydantic/typing-inspection",
+    "modifications": "none"
+  },
+  {
+    "name": "typing_extensions",
+    "version": "4.16.0",
+    "license": "PSF-2.0",
+    "source": null,
+    "modifications": "none"
+  },
+  {
+    "name": "urllib3",
+    "version": "2.7.0",
+    "license": "MIT",
+    "source": null,
+    "modifications": "none"
+  },
+  {
+    "name": "uvicorn",
+    "version": "0.32.1",
+    "license": "BSD-3-Clause",
+    "source": "https://www.uvicorn.org/",
+    "modifications": "none"
+  },
+  {
+    "name": "uvloop",
+    "version": "0.22.1",
+    "license": "Apache-2.0",
+    "source": null,
+    "modifications": "none"
+  },
+  {
+    "name": "watchfiles",
+    "version": "1.2.0",
+    "license": "MIT",
+    "source": "https://github.com/samuelcolvin/watchfiles",
+    "modifications": "none"
+  },
+  {
+    "name": "websockets",
+    "version": "17.0",
+    "license": "BSD-3-Clause",
+    "source": "https://github.com/python-websockets/websockets",
+    "modifications": "none"
+  },
+  {
+    "name": "wrapt",
+    "version": "2.4.0",
+    "license": "BSD-2-Clause",
+    "source": "https://github.com/GrahamDumpleton/wrapt",
+    "modifications": "none"
+  }
+]

@@ -1,0 +1,114 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:0e1b0a00-1111-4111-8111-000000000002",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-09-04T00:00:00Z",
+    "tools": [
+      { "name": "dokumen manual dari Dockerfile + referensi Debian bookworm", "version": "1.0" }
+    ],
+    "component": {
+      "type": "container",
+      "name": "sulap-pdf",
+      "version": "latest",
+      "bom-ref": "sulap-pdf-image",
+      "purl": "pkg:oci/sulap-pdf@latest?repository_url=gcr.io"
+    }
+  },
+  "components": [
+    {
+      "type": "operating-system",
+      "bom-ref": "debian-12-bookworm",
+      "name": "Debian GNU/Linux",
+      "version": "12 (bookworm)",
+      "description": "Base image python:3.12-slim (debian:bookworm-slim). Versi paket OS penuh (libc, openssl, fontconfig, poppler, dsb.) TIDAK di-enumerasi di sini.",
+      "purl": "pkg:deb/debian/debian@12?arch=amd64",
+      "properties": [
+        { "name": "full-os-sbom", "value": "generate di CI via syft/trivy atas image final (lihat LICENSE_COMPLIANCE.md, status pending)" }
+      ]
+    },
+    {
+      "type": "platform",
+      "bom-ref": "python312-slim-base",
+      "name": "python:3.12-slim",
+      "version": "3.12-slim",
+      "purl": "pkg:oci/python@3.12-slim?repository_url=index.docker.io"
+    },
+    {
+      "type": "application",
+      "bom-ref": "python-interpreter",
+      "name": "CPython",
+      "version": "3.12.x (patch per image build; venv lokal = 3.12.13)",
+      "purl": "pkg:generic/cpython@3.12",
+      "licenses": [{ "license": { "id": "Python-2.0" } }]
+    },
+    {
+      "type": "library",
+      "bom-ref": "apt-qpdf",
+      "name": "qpdf",
+      "version": "11.3.0-1+deb12u1",
+      "description": "Engine kompresi PDF. Tidak di-pin di Dockerfile — versi = resolusi apt Debian bookworm saat image build. Referensi bookworm tertera.",
+      "purl": "pkg:deb/debian/qpdf@11.3.0-1%2Bdeb12u1?arch=amd64",
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "externalReferences": [{ "type": "website", "url": "https://qpdf.sourceforge.io" }],
+      "properties": [
+        { "name": "pinned-in-dockerfile", "value": "no — action: pin apt version" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "apt-libreoffice-core",
+      "name": "libreoffice-core",
+      "version": "4:7.4.7-1+deb12u14",
+      "description": "Inti LibreOffice (dipasang via libreoffice-core/writer/calc/impress/draw). Versi = resolusi apt bookworm; tak di-pin.",
+      "purl": "pkg:deb/debian/libreoffice-core@7.4.7?arch=amd64",
+      "licenses": [{ "license": { "id": "MPL-2.0" } }, { "license": { "id": "LGPL-3.0-or-later" } }],
+      "externalReferences": [{ "type": "website", "url": "https://www.libreoffice.org/" }],
+      "properties": [
+        { "name": "pinned-in-dockerfile", "value": "no — action: pin apt version" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "apt-libreoffice-writer",
+      "name": "libreoffice-writer", "version": "4:7.4.7-1+deb12u14",
+      "purl": "pkg:deb/debian/libreoffice-writer@7.4.7?arch=amd64",
+      "licenses": [{ "license": { "id": "MPL-2.0" } }, { "license": { "id": "LGPL-3.0-or-later" } }]
+    },
+    {
+      "type": "library",
+      "bom-ref": "apt-libreoffice-calc",
+      "name": "libreoffice-calc", "version": "4:7.4.7-1+deb12u14",
+      "purl": "pkg:deb/debian/libreoffice-calc@7.4.7?arch=amd64",
+      "licenses": [{ "license": { "id": "MPL-2.0" } }, { "license": { "id": "LGPL-3.0-or-later" } }]
+    },
+    {
+      "type": "library",
+      "bom-ref": "apt-libreoffice-impress",
+      "name": "libreoffice-impress", "version": "4:7.4.7-1+deb12u14",
+      "purl": "pkg:deb/debian/libreoffice-impress@7.4.7?arch=amd64",
+      "licenses": [{ "license": { "id": "MPL-2.0" } }, { "license": { "id": "LGPL-3.0-or-later" } }]
+    },
+    {
+      "type": "library",
+      "bom-ref": "apt-libreoffice-draw",
+      "name": "libreoffice-draw", "version": "4:7.4.7-1+deb12u14",
+      "purl": "pkg:deb/debian/libreoffice-draw@7.4.7?arch=amd64",
+      "licenses": [{ "license": { "id": "MPL-2.0" } }, { "license": { "id": "LGPL-3.0-or-later" } }]
+    },
+    {
+      "type": "library",
+      "bom-ref": "apt-curl",
+      "name": "curl",
+      "version": "7.88.1-10+deb12u5 (referensi bookworm)",
+      "description": "Dipasang utk HEALTHCHECK container.",
+      "purl": "pkg:deb/debian/curl@7.88.1?arch=amd64",
+      "licenses": [{ "license": { "id": "curl" } }],
+      "externalReferences": [{ "type": "website", "url": "https://curl.se/" }]
+    }
+  ],
+  "dependencies": [
+    { "ref": "sulap-pdf-image", "dependsOn": ["debian-12-bookworm", "python312-slim-base", "python-interpreter", "apt-qpdf", "apt-libreoffice-core", "apt-libreoffice-writer", "apt-libreoffice-calc", "apt-libreoffice-impress", "apt-libreoffice-draw", "apt-curl"] }
+  ]
+}

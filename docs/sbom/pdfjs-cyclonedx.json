@@ -1,0 +1,34 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:0e1b0a00-2222-4222-8222-000000000003",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-09-04T00:00:00Z",
+    "component": {
+      "type": "application",
+      "name": "sulap-pdf-frontend (pdf.js runtime)",
+      "version": "0.1.0",
+      "bom-ref": "sulap-pdf-frontend"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pdfjs-dist-4.0.379",
+      "name": "pdfjs-dist",
+      "version": "4.0.379",
+      "description": "PDF.js renderer untuk kanvas pratinjau Edit PDF. Worker disalin dari build artifact npm ini ke frontend/public/pdf.worker.min.mjs (self-hosted, tanpa CDN). Dependensi penuh lihat npm-cyclonedx.json.",
+      "purl": "pkg:npm/pdfjs-dist@4.0.379",
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "externalReferences": [
+        { "type": "website", "url": "https://mozilla.github.io/pdf.js/" },
+        { "type": "vcs", "url": "https://github.com/mozilla/pdf.js" }
+      ],
+      "properties": [
+        { "name": "copyright", "value": "Copyright 2023 Mozilla Foundation (license header worker & main tetap dipertahankan)" },
+        { "name": "distributed-asset", "value": "frontend/public/pdf.worker.min.mjs (copy file LICENSE + NOTICE tetap ada di source npm; header @licstart di worker terverifikasi utuh)" }
+      ]
+    }
+  ]
+}

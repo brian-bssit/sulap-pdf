@@ -1,0 +1,4 @@
+@next/swc-darwin-arm64 14.2.33
+License: MIT
+Full text: lih. registry npm
+(paket tidak menyertakan file LICENSE di distribusi npm.)
