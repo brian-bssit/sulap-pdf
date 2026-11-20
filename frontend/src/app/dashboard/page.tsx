@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/lib/strings";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -34,27 +35,19 @@ interface User {
   role: "user" | "admin" | "auditor";
 }
 
-const DEMO_USER: User = { name: "Loading...", email: "", role: "user" };
+const DEMO_USER: User = { name: t.shell.loading, email: "", role: "user" };
 
 const navItems: { id: Tab; label: string; icon: React.ReactNode; roles: string[] }[] = [
-  { id: "compress", label: "Compress PDF", icon: <Minimize2 size={20} />, roles: ["user", "auditor", "admin"] },
-  { id: "merge", label: "Merge PDF", icon: <Layers size={20} />, roles: ["user", "auditor", "admin"] },
-  { id: "rearrange", label: "Rearrange PDF", icon: <Grid3x3 size={20} />, roles: ["user", "auditor", "admin"] },
-  { id: "remove-pages", label: "Remove Pages", icon: <Scissors size={20} />, roles: ["user", "auditor", "admin"] },
-  { id: "convert", label: "Convert to PDF", icon: <FileUp size={20} />, roles: ["user", "auditor", "admin"] },
-  { id: "edit", label: "Edit PDF", icon: <PenTool size={20} />, roles: ["user", "auditor", "admin"] },
-  { id: "admin", label: "Admin Panel", icon: <ShieldAlert size={20} />, roles: ["auditor", "admin"] },
+  { id: "compress", label: t.nav.compress, icon: <Minimize2 size={20} />, roles: ["user", "auditor", "admin"] },
+  { id: "merge", label: t.nav.merge, icon: <Layers size={20} />, roles: ["user", "auditor", "admin"] },
+  { id: "rearrange", label: t.nav.rearrange, icon: <Grid3x3 size={20} />, roles: ["user", "auditor", "admin"] },
+  { id: "remove-pages", label: t.nav.removePages, icon: <Scissors size={20} />, roles: ["user", "auditor", "admin"] },
+  { id: "convert", label: t.nav.convert, icon: <FileUp size={20} />, roles: ["user", "auditor", "admin"] },
+  { id: "edit", label: t.nav.edit, icon: <PenTool size={20} />, roles: ["user", "auditor", "admin"] },
+  { id: "admin", label: t.nav.admin, icon: <ShieldAlert size={20} />, roles: ["auditor", "admin"] },
 ];
 
-const pageTitles: Record<Tab, { title: string; subtitle: string }> = {
-  merge: { title: "Gabung PDF", subtitle: "Gabungkan 2 hingga 10 file PDF menjadi satu" },
-  compress: { title: "Kompres PDF", subtitle: "Kurangi ukuran file PDF tanpa kehilangan kualitas" },
-  rearrange: { title: "Atur Ulang PDF", subtitle: "Ubah urutan atau putar halaman PDF" },
-  "remove-pages": { title: "Hapus Halaman", subtitle: "Pilih dan hapus halaman tertentu dari PDF" },
-  convert: { title: "Konversi ke PDF", subtitle: "Ubah dokumen apapun menjadi PDF — DOCX, XLSX, PPTX, dan lainnya" },
-  edit: { title: "Edit PDF", subtitle: "Tambah teks, stempel, dan highlight di atas halaman PDF" },
-  admin: { title: "Admin Panel", subtitle: "User management & audit logs" },
-};
+const pageTitles: Record<Tab, { title: string; subtitle: string }> = t.pages;
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -93,7 +86,7 @@ export default function DashboardPage() {
       {/* Sidebar */}
       <aside
         id="dashboard-sidebar"
-        aria-label="Menu navigasi"
+        aria-label={t.nav.label}
         className={`fixed md:static inset-y-0 left-0 z-40 w-72 bg-white border-r border-slate-200/80 transform transition-transform duration-300 ease-in-out flex flex-col shadow-xl md:shadow-none ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
@@ -101,11 +94,11 @@ export default function DashboardPage() {
         {/* Logo */}
         <div className="py-6 px-6 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <img src={LOGO_URL} alt="BSS Logo" className="h-14 object-contain" />
+            <img src={LOGO_URL} alt={t.shell.logoAlt} className="h-14 object-contain" />
             <div>
               <span className="text-lg font-bold text-slate-800 tracking-tight">SULAP PDF</span>
               <span className="block text-[11px] text-slate-500 font-medium uppercase tracking-wider">
-                SULAP PDF v1.0
+                {t.shell.version}
               </span>
             </div>
           </div>
@@ -158,8 +151,8 @@ export default function DashboardPage() {
             onClick={handleLogout}
             className="w-full flex items-center px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-colors"
           >
-            <LogOut size={16} className="mr-3" />
-            Keluar
+            <LogOut size={16} className="mr-3" aria-hidden="true" />
+            {t.nav.logout}
           </button>
         </div>
       </aside>
@@ -172,7 +165,7 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label={isMobileMenuOpen ? "Tutup menu navigasi" : "Buka menu navigasi"}
+              aria-label={isMobileMenuOpen ? t.nav.close : t.nav.open}
               aria-expanded={isMobileMenuOpen}
               aria-controls="dashboard-sidebar"
               className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
@@ -187,7 +180,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs font-medium text-emerald-700">Stateless Secure</span>
+              <span className="text-xs font-medium text-emerald-700">{t.shell.badge}</span>
             </div>
           </div>
         </header>
@@ -202,10 +195,10 @@ export default function DashboardPage() {
         {/* Footer */}
         <footer className="flex-shrink-0 border-t border-slate-200/80 bg-white/60 glass-effect px-4 md:px-8 py-3">
           <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
-            <span>© 2026 Bank Sahabat Sampoerna. Internal use only.</span>
+            <span>{t.app.footer}</span>
             <span className="flex items-center gap-1.5">
               <ShieldCheck size={14} className="text-emerald-500" />
-              Stateless Processing — No File Storage
+              {t.app.stateless}
             </span>
           </div>
         </footer>
@@ -254,7 +247,7 @@ function AdminPanel({ readOnly }: { readOnly: boolean }) {
               : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
           }`}
         >
-          <Users size={16} /> User Management
+          <Users size={16} aria-hidden="true" /> {t.admin.users}
         </button>
         <button
           onClick={() => setSubTab("audit")}
@@ -264,7 +257,7 @@ function AdminPanel({ readOnly }: { readOnly: boolean }) {
               : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
           }`}
         >
-          <ShieldAlert size={16} /> Audit Logs
+          <ShieldAlert size={16} aria-hidden="true" /> {t.admin.audit}
         </button>
       </div>
       {subTab === "users" ? <UserManagement readOnly={readOnly} /> : <AuditTable />}

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Shield, User } from "lucide-react";
 import api from "@/lib/api";
 import { errorDetail } from "@/lib/error";
+import { t } from "@/lib/strings";
 
 interface UserRow {
   id: string;
@@ -15,7 +16,7 @@ interface UserRow {
   created_at: string | null;
 }
 
-const ROLE_LABEL: Record<string, string> = { user: "User", auditor: "Auditor", admin: "Admin" };
+const ROLE_LABEL = t.admin.userMgmt.roles;
 
 export default function UserManagement({ readOnly = false }: { readOnly?: boolean }) {
   const [users, setUsers] = useState<UserRow[]>([]);
@@ -41,7 +42,7 @@ export default function UserManagement({ readOnly = false }: { readOnly?: boolea
       await api.post(`/api/admin/users/${userId}/upgrade?role=${newRole}`);
       setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u)));
     } catch (e) {
-      setError(errorDetail(e) ?? "Gagal mengubah role");
+      setError(errorDetail(e) ?? t.admin.userMgmt.failedRole);
     }
   };
 
@@ -56,9 +57,9 @@ export default function UserManagement({ readOnly = false }: { readOnly?: boolea
   return (
     <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
       <div className="px-6 py-5 border-b border-slate-100">
-        <h2 className="text-lg font-bold text-slate-800">User Management</h2>
+        <h2 className="text-lg font-bold text-slate-800">{t.admin.userMgmt.title}</h2>
         <p className="text-xs text-slate-500">
-          {readOnly ? "Daftar user (hanya baca)." : "Kelola role user. User baru otomatis terdaftar sebagai regular user."}
+          {readOnly ? t.admin.userMgmt.readOnly : t.admin.userMgmt.manage}
         </p>
         {error && <p role="alert" className="mt-2 text-xs font-medium text-red-700">{error}</p>}
       </div>
@@ -67,11 +68,11 @@ export default function UserManagement({ readOnly = false }: { readOnly?: boolea
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="text-xs text-slate-500 uppercase bg-slate-50/80 border-b border-slate-200">
-              <th className="px-6 py-3 font-semibold">User</th>
-              <th className="px-6 py-3 font-semibold">Email</th>
-              <th className="px-6 py-3 font-semibold">Role</th>
-              <th className="px-6 py-3 font-semibold">Last Login</th>
-              {!readOnly && <th className="px-6 py-3 font-semibold text-right">Action</th>}
+              <th scope="col" className="px-6 py-3 font-semibold">{t.admin.userMgmt.cols.user}</th>
+              <th scope="col" className="px-6 py-3 font-semibold">{t.admin.userMgmt.cols.email}</th>
+              <th scope="col" className="px-6 py-3 font-semibold">{t.admin.userMgmt.cols.role}</th>
+              <th scope="col" className="px-6 py-3 font-semibold">{t.admin.userMgmt.cols.lastLogin}</th>
+              {!readOnly && <th scope="col" className="px-6 py-3 font-semibold text-right">{t.admin.userMgmt.cols.action}</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -106,7 +107,7 @@ export default function UserManagement({ readOnly = false }: { readOnly?: boolea
                 {!readOnly && (
                   <td className="px-6 py-3.5 text-right">
                     <select
-                      aria-label={`Role untuk ${u.email}`}
+                      aria-label={t.admin.userMgmt.roleFor(u.email)}
                       value={u.role}
                       onChange={(e) => handleUpgrade(u.id, e.target.value)}
                       className="text-xs font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2 py-1.5 rounded-lg"
@@ -124,7 +125,7 @@ export default function UserManagement({ readOnly = false }: { readOnly?: boolea
       </div>
 
       <div className="px-6 py-3 text-center text-xs text-slate-400 border-t border-slate-100 bg-slate-50/30">
-        {users.length} user terdaftar
+        {t.admin.userMgmt.count(users.length)}
       </div>
     </div>
   );

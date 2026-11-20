@@ -4,7 +4,7 @@ import uuid
 import logging
 from pathlib import Path
 
-from fastapi import APIRouter, Request, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Request, Depends, Form, HTTPException, UploadFile, File
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,7 +20,13 @@ logger = logging.getLogger("cloudpdf")
 
 router = APIRouter()
 
-_QPDF_ARGS = ["--recompress-flate", "--compression-level=9", "--object-streams=generate"]
+# Semua level LOSSLESS (qpdf tak mengubah kualitas gambar). Level hanya menukar kecepatan vs ukuran.
+# "high" = perilaku lama (default bila klien tak mengirim `level`).
+_LEVEL_ARGS = {
+    "low": ["--recompress-flate", "--compression-level=3"],
+    "balanced": ["--recompress-flate", "--compression-level=6", "--object-streams=generate"],
+    "high": ["--linearize", "--recompress-flate", "--compression-level=9", "--object-streams=generate"],
+}
 
 PDF_MAGIC = b"%PDF"
 
@@ -40,9 +46,12 @@ def _validate_pdf(path_str: str, max_size_mb: int) -> int:
 async def compress_pdf(
     request: Request,
     file: UploadFile = File(...),
+    level: str = Form("high"),
     db: AsyncSession = Depends(get_db),
     user=Depends(get_current_user),
 ):
+    if level not in _LEVEL_ARGS:
+        raise HTTPException(status_code=400, detail="level harus low, balanced, atau high")
 
     job_id = str(uuid.uuid4())[:8]
     input_path = Path(f"/tmp/cpdf_{job_id}_input.pdf")
@@ -61,7 +70,7 @@ async def compress_pdf(
             _cleanup(input_path, output_path)
             return StreamingResponse(iter([]), status_code=499)
 
-        cmd = ["qpdf", "--linearize", *_QPDF_ARGS, str(input_path), str(output_path)]
+        cmd = ["qpdf", *_LEVEL_ARGS[level], str(input_path), str(output_path)]
 
         process = await asyncio.create_subprocess_exec(
             *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
@@ -81,6 +90,12 @@ async def compress_pdf(
 
         output_data = output_path.read_bytes()
         output_size = len(output_data)
+        # Lossless tak selalu mengecilkan (PDF kecil/sudah optimal bisa membesar karena overhead
+        # linearize/xref). Jangan kembalikan hasil yang lebih besar: pakai berkas asli.
+        unchanged = output_size >= input_size
+        if unchanged:
+            output_data = input_path.read_bytes()
+            output_size = input_size
         processing_ms = int((time.monotonic() - start_time) * 1000)
 
         await _audit(db, request, user, file, input_size, output_size, "SUCCESS", processing_ms)
@@ -97,6 +112,7 @@ async def compress_pdf(
                 "Content-Disposition": attachment_filename(output_filename),
                 "X-Original-Size": str(input_size),
                 "X-Compressed-Size": str(output_size),
+                "X-Compression": "unchanged" if unchanged else "reduced",
             },
         )
 

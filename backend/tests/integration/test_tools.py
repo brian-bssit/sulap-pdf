@@ -178,3 +178,31 @@ def test_convert_txt_to_pdf(client, audit_rows):
 def test_convert_rejections(client, name, data, code, detail):
     r = client.post("/api/pdf/convert", files={"file": (name, data, "text/plain")})
     assert r.status_code == code and detail in r.json()["detail"]
+
+
+# ── compress: level & hasil tak lebih besar dari asli ──
+@needs_qpdf
+@pytest.mark.parametrize("level", ["low", "balanced", "high"])
+def test_compress_levels_never_grow_file(client, level):
+    from tools.make_fixtures import pdf_normal as mk
+
+    data = mk(30)  # cukup besar agar qpdf bisa memadatkan
+    r = client.post("/api/pdf/compress", files={"file": ("a.pdf", data)}, data={"level": level})
+    assert r.status_code == 200
+    assert len(r.content) <= len(data)
+    if r.headers["x-compression"] == "unchanged":
+        assert r.content == data
+    assert int(r.headers["x-compressed-size"]) == len(r.content)
+    assert len(pages_text(r.content)) == 30
+
+
+@needs_qpdf
+def test_compress_tiny_pdf_returned_unchanged_when_not_smaller(client, pdf_normal):
+    r = client.post("/api/pdf/compress", files={"file": ("a.pdf", pdf_normal)})
+    assert r.status_code == 200 and len(r.content) <= len(pdf_normal)
+    assert (r.headers["x-compression"] == "unchanged") == (r.content == pdf_normal)
+
+
+def test_compress_invalid_level_400(client, pdf_normal):
+    r = client.post("/api/pdf/compress", files={"file": ("a.pdf", pdf_normal)}, data={"level": "ultra"})
+    assert r.status_code == 400 and "level" in r.json()["detail"]

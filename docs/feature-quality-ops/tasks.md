@@ -15,12 +15,12 @@
 - [x] **Checkpoint B** — `pytest`, `npm test`, `npm run test:e2e` lulus
 
 ## Gelombang C — Frontend
-- [ ] C1 `lib/strings.ts`; migrasikan semua komponen ke kamus (satu tool per commit) [Req 2]
-- [ ] C2 Karakterisasi + pecah `EditOverlayTool.tsx` (langkah 1–3 di design) [Req 3]
-- [ ] C3 Compress level (backend arg + UI) [Req 1]
-- [ ] C4 `lib/upload.ts` progres + `PdfPreview` + dark mode + responsif 360 px [Req 1]
-- [ ] C5 Audit a11y (axe di Playwright) dan perbaiki temuan [Req 1]
-- [ ] **Checkpoint C** — lint, tsc, build, test lulus; cek manual di browser (desktop & 375 px)
+- [x] C1 `lib/strings.ts`; migrasikan semua komponen ke kamus (satu tool per commit) [Req 2]
+- [x] C2 Karakterisasi + pecah `EditOverlayTool.tsx` (langkah 1–3 di design) [Req 3]
+- [x] C3 Compress level (backend arg + UI) [Req 1]
+- [x] C4 `lib/upload.ts` progres + `PdfPreview` + dark mode + responsif 360 px [Req 1]
+- [x] C5 Audit a11y (axe di Playwright) dan perbaiki temuan [Req 1]
+- [x] **Checkpoint C** — lint, tsc, build, test lulus; cek manual di browser (desktop & 375 px)
 
 ## Gelombang D — Dokumen ops & DR
 - [ ] D1 `docs/ops/runbook.md`, `raci.md` (isi dengan placeholder pemilik yang eksplisit "BELUM DITETAPKAN"), `sla.md`, `retensi-audit.md` [Req 7]
@@ -35,3 +35,11 @@
 - Vitest (jsdom) hanya untuk logika murni `src/lib/*`; `@testing-library/react` belum ditambahkan (belum ada test komponen) — YAGNI.
 - Playwright memakai backend sungguhan: `E2E_DATABASE_URL=… PYTHON=… PW_CHANNEL=chrome npm run test:e2e` (CI: Chromium bawaan, `playwright install --with-deps chromium`).
 - Uji beban: `loadtest/` (Locust). Laporan lokal di `loadtest/README.md`.
+
+## Catatan gelombang C
+- Pratinjau-sebelum-unduh hanya untuk Kompres, Gabung, Konversi (hasil tak terlihat sebelumnya). Atur Halaman, Hapus Halaman, Edit
+  sudah WYSIWYG lewat thumbnail/kanvas, jadi tetap unduh otomatis (+ progres unggah). Hasil kompresi yang tak lebih kecil dikembalikan apa adanya.
+- Dark mode lewat CSS variable di `tailwind.config.ts` (kelas yang ada otomatis berbalik; teks berwarna punya skala terpisah). Tanpa tombol manual (YAGNI).
+- Font Inter (CDN Google, terblokir CSP baru) diganti Plus Jakarta Sans self-host (OFL-1.1).
+- A11y: axe WCAG 2.1 AA lulus di 11 layar x terang/gelap; reorder via keyboard (Gabung, Atur Halaman); tes lebar 360 px tanpa scroll horizontal.
+- `@testing-library/react` tetap tidak ditambahkan: perilaku komponen dibuktikan lewat Playwright pada backend sungguhan.

@@ -3,9 +3,11 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { UploadCloud, FileText, Trash2, Download, Scissors, Loader2, X, ChevronRight } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
-import api from "@/lib/api";
 import { downloadBlob } from "@/lib/download";
+import { errorDetail } from "@/lib/error";
 import { formatBytes } from "@/lib/format";
+import { t } from "@/lib/strings";
+import { useJob } from "@/lib/useJob";
 import LoadingOverlay from "./LoadingOverlay";
 import SecurityFooter from "./SecurityFooter";
 
@@ -28,7 +30,8 @@ export default function RemovePagesTool() {
   const fileBytes = useRef<ArrayBuffer | null>(null);
   const [pages, setPages] = useState<PageInfo[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [isProcessing, setProcessing] = useState(false);
+  const job = useJob();
+  const isProcessing = job.busy;
   const [allDone, setAllDone] = useState(false);
   const [isRendering, setRendering] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +49,7 @@ export default function RemovePagesTool() {
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       const totalPages = pdf.numPages;
       if (totalPages > 200) {
-        setError("Maksimal 200 halaman");
+        setError(t.removePages.errMaxPages);
         setRendering(false);
         return;
       }
@@ -65,7 +68,7 @@ export default function RemovePagesTool() {
       setPages(pageInfos);
     } catch (err) {
       console.error("PDF render error:", err);
-      setError("Gagal membaca halaman PDF. Pastikan file tidak rusak.");
+      setError(t.removePages.errRead);
     } finally {
       setRendering(false);
     }
@@ -162,9 +165,8 @@ export default function RemovePagesTool() {
 
   const handleRemove = async () => {
     if (!file || pages.length === 0 || selected.size === 0) return;
-    if (!fileBytes.current) { setError("File tidak valid. Silakan upload ulang."); return; }
-    if (selected.size >= pages.length) { setError("Tidak bisa menghapus semua halaman. Setidaknya 1 halaman harus tersisa."); return; }
-    setProcessing(true);
+    if (!fileBytes.current) { setError(t.removePages.errInvalidFile); return; }
+    if (selected.size >= pages.length) { setError(t.removePages.errDeleteAll); return; }
     setError(null);
 
     try {
@@ -173,8 +175,8 @@ export default function RemovePagesTool() {
       formData.append("file", blob, file.name);
       formData.append("pages_to_remove", JSON.stringify(Array.from(selected).sort((a, b) => a - b)));
 
-      const response = await api.post("/api/pdf/remove-pages", formData, { responseType: "blob" });
-      downloadBlob(response.data as Blob, response.headers["content-disposition"] as string, `trimmed_${file.name}`);
+      const res = await job.run("/api/pdf/remove-pages", formData, `trimmed_${file.name}`);
+      downloadBlob(res.blob, undefined, res.filename);
 
       const nextIdx = queueState.idx + 1;
       if (nextIdx < queueState.total) {
@@ -184,12 +186,7 @@ export default function RemovePagesTool() {
         setAllDone(true);
       }
     } catch (err: unknown) {
-      const msg = err && typeof err === "object" && "response" in err
-        ? (err as { response: { data?: { detail?: string } } }).response?.data?.detail || "Gagal menghapus halaman"
-        : "Gagal menghapus halaman. Coba lagi.";
-      setError(msg as string);
-    } finally {
-      setProcessing(false);
+      setError(errorDetail(err) ?? t.removePages.errFailed);
     }
   };
 
@@ -204,15 +201,15 @@ export default function RemovePagesTool() {
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-      {isProcessing && <LoadingOverlay />}
+      {job.busy && <LoadingOverlay phase={job.phase} percent={job.percent} />}
       <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-red-50/50 to-transparent">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
-            <Scissors size={20} className="text-red-600" />
+            <Scissors size={20} className="text-red-600" aria-hidden="true" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-slate-800">Hapus Halaman</h2>
-            <p className="text-sm text-slate-500">Pilih halaman yang ingin dihapus dari PDF</p>
+            <h2 className="text-xl font-bold text-slate-800">{t.removePages.title}</h2>
+            <p className="text-sm text-slate-500">{t.removePages.subtitle}</p>
           </div>
         </div>
       </div>
@@ -220,7 +217,7 @@ export default function RemovePagesTool() {
         {!file ? (
           <div
             ref={dropRef}
-            role="button" tabIndex={0} aria-label="Pilih file PDF"
+            role="button" tabIndex={0}
             className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-red-400 hover:bg-red-50/30 transition-all cursor-pointer mb-6 focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
             onClick={() => fileInputRef.current?.click()}
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInputRef.current?.click(); } }}
@@ -228,8 +225,8 @@ export default function RemovePagesTool() {
             <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-4">
               <UploadCloud size={28} className="text-red-500" />
             </div>
-            <p className="text-slate-700 font-semibold mb-1">Pilih file PDF</p>
-            <p className="text-slate-500 text-xs">Bisa pilih banyak file sekaligus</p>
+            <p className="text-slate-700 font-semibold mb-1">{t.removePages.choose}</p>
+            <p className="text-slate-500 text-xs">{t.removePages.multiHint}</p>
             <input ref={fileInputRef} type="file" accept="application/pdf" multiple className="hidden" onChange={handleFileSelect} />
           </div>
         ) : (
@@ -242,13 +239,13 @@ export default function RemovePagesTool() {
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-slate-800 truncate">{file.name}</p>
                   <p className="text-xs text-slate-500">
-                    {formatBytes(file.size)} • {pages.length} halaman
+                    {t.removePages.pagesInfo(formatBytes(file.size), pages.length)}
                     {qTotal > 1 && <span className="ml-2 text-red-500 font-medium">({qIdx + 1}/{qTotal})</span>}
                   </p>
                 </div>
               </div>
               {qTotal <= 1 && (
-                <button onClick={resetAll} className="text-xs text-red-600 hover:text-red-700 font-medium px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors">Ganti File</button>
+                <button onClick={resetAll} className="text-xs text-red-600 hover:text-red-700 font-medium px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors">{t.removePages.changeFile}</button>
               )}
             </div>
 
@@ -263,8 +260,8 @@ export default function RemovePagesTool() {
             {isRendering && (
               <div role="status" aria-live="polite" className="bg-slate-50 p-12 rounded-xl border border-slate-200 mb-6 text-center">
                 <Loader2 size={32} className="animate-spin text-red-500 mx-auto mb-3" />
-                <p className="text-sm font-medium text-slate-600">Merender halaman...</p>
-                <p className="text-xs text-slate-500 mt-1">Mohon tunggu sebentar</p>
+                <p className="text-sm font-medium text-slate-600">{t.removePages.rendering}</p>
+                <p className="text-xs text-slate-500 mt-1">{t.removePages.pleaseWait}</p>
               </div>
             )}
 
@@ -275,10 +272,10 @@ export default function RemovePagesTool() {
                     {pages.map((page, idx) => {
                       const isSel = selected.has(idx);
                       return (
-                        <button key={page.id} type="button" onClick={() => togglePage(idx)}
+                        <button key={page.id} type="button" onClick={() => togglePage(idx)} aria-pressed={isSel} aria-label={t.removePages.pageToggle(page.originalIndex, isSel)}
                           className={`relative bg-white rounded-xl shadow-sm border-2 cursor-pointer group transition-all text-left ${isSel ? "border-red-400 ring-2 ring-red-200 opacity-60" : "border-slate-200 hover:border-red-300 hover:-translate-y-1 hover:shadow-md"}`}>
                           <div className="w-full overflow-hidden rounded-t-xl bg-white flex items-center justify-center">
-                            {page.imageUrl ? <img src={page.imageUrl} alt={`Halaman ${page.originalIndex}`} className="w-full h-auto object-contain" draggable={false} />
+                            {page.imageUrl ? <img src={page.imageUrl} alt={t.removePages.pageAlt(page.originalIndex)} className="w-full h-auto object-contain" draggable={false} />
                               : <div className="w-full aspect-[3/4] flex items-center justify-center text-slate-300 text-2xl font-bold">{page.originalIndex}</div>}
                           </div>
                           {isSel && <div className="absolute inset-0 bg-red-500/20 rounded-xl flex items-center justify-center"><div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center shadow-lg"><X size={18} className="text-white" /></div></div>}
@@ -296,18 +293,18 @@ export default function RemovePagesTool() {
 
                 <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                   <p className="text-xs text-slate-500">
-                    {allDone ? "✅ Semua file selesai diproses"
+                    {allDone ? t.removePages.allDone
                       : selected.size === 0
-                        ? qTotal > 1 ? `📄 File ${qIdx + 1} dari ${qTotal}` : "💡 Klik halaman yang ingin dihapus"
-                        : `🗑️ ${selected.size} halaman dipilih — ${remaining} halaman tersisa`}
+                        ? qTotal > 1 ? t.removePages.queueInfo(qIdx + 1, qTotal) : t.removePages.hint
+                        : t.removePages.selectedInfo(selected.size, remaining)}
                   </p>
                   {allDone ? (
-                    <button onClick={resetAll} className="flex items-center gap-2 bg-white border-2 border-red-200 text-red-700 px-6 py-2.5 rounded-xl font-semibold hover:bg-red-50 transition-all"><Download size={16} /> Proses Dokumen Lainnya</button>
+                    <button onClick={resetAll} className="flex items-center gap-2 bg-white border-2 border-red-200 text-red-700 px-6 py-2.5 rounded-xl font-semibold hover:bg-red-50 transition-all"><Download size={16} aria-hidden="true" /> {t.common.processAnother}</button>
                   ) : (
                     <button onClick={handleRemove} disabled={selected.size === 0 || isProcessing}
                       className="flex items-center gap-2 bg-gradient-to-r from-red-600 to-rose-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-red-700 hover:to-rose-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-red-500/20 disabled:shadow-none">
                       {qTotal > 1 ? <ChevronRight size={16} /> : <Trash2 size={16} />}
-                      {qTotal > 1 ? `Proses (${qIdx + 1}/${qTotal})` : `Hapus${selected.size > 0 ? ` (${selected.size})` : ""}`}
+                      {qTotal > 1 ? t.removePages.processQueue(qIdx + 1, qTotal) : t.removePages.action(selected.size)}
                     </button>
                   )}
                 </div>
