@@ -7,13 +7,13 @@ from fastapi import APIRouter, Request, Depends, HTTPException, UploadFile, File
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
-from pypdf import PdfWriter, PdfReader
+from pypdf import PdfWriter
 
 from config import settings
 from db.database import get_db
 from auth.dependencies import get_current_user
 from audit import log_audit
-from pdf.errors import raise_if_encrypted
+from pdf.errors import open_reader, raise_if_encrypted
 from pdf.upload import save_upload
 
 logger = logging.getLogger("cloudpdf")
@@ -27,7 +27,7 @@ def _merge_on_disk(tmp_paths: list[Path], output_path: Path) -> None:
     """Parse+copy pypdf sinkron — dipanggil via threadpool biar event loop lega."""
     writer = PdfWriter()
     for tmp_path in tmp_paths:
-        reader = PdfReader(str(tmp_path))
+        reader = open_reader(tmp_path)
         for page in reader.pages:
             writer.add_page(page)
     writer.write(str(output_path))

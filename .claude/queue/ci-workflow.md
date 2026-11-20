@@ -36,6 +36,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npx tsc --noEmit
+      - run: npm test
       - run: npm run build
   audit:
     runs-on: ubuntu-latest
@@ -48,6 +49,10 @@ jobs:
         with: { node-version: 22 }
       - run: cd frontend && npm audit --omit=dev --audit-level=high
 ```
+
+Tambahan (job e2e, opsional sampai disetujui): service Postgres 16, `playwright install --with-deps chromium`, lalu
+`E2E_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/e2e PYTHON=python npm run test:e2e`
+(butuh backend dependency terpasang + qpdf + libreoffice di runner; tanpa PW_CHANNEL).
 
 Catatan: pin action ke SHA bila kebijakan bank mensyaratkan. `audit` bisa merah karena CVE
 upstream; putuskan apakah wajib (required) atau informatif.

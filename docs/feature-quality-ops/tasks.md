@@ -8,11 +8,11 @@
 - [x] **Checkpoint A** — pytest lulus
 
 ## Gelombang B — Test
-- [ ] B1 `tools/make_fixtures.py` + fixture pytest (normal, korup, terenkripsi, 200 hlm, scan) [Req 6]
-- [ ] B2 Test integrasi tiap tool lama (compress, merge, rearrange, remove-pages, convert, edit-overlay) dgn skip eksplisit [Req 6]
-- [ ] B3 Vitest + test `lib/*`; Playwright + alur login/compress/merge/admin [Req 4]
-- [ ] B4 `loadtest/locustfile.py` + laporan awal (lokal) [Req 6]
-- [ ] **Checkpoint B** — `pytest`, `npm test`, `npm run test:e2e` lulus
+- [x] B1 `tools/make_fixtures.py` + fixture pytest (normal, korup, terenkripsi, 200 hlm, scan) [Req 6]
+- [x] B2 Test integrasi tiap tool lama (compress, merge, rearrange, remove-pages, convert, edit-overlay) dgn skip eksplisit [Req 6]
+- [x] B3 Vitest + test `lib/*`; Playwright + alur login/compress/merge/admin [Req 4]
+- [x] B4 `loadtest/locustfile.py` + laporan awal (lokal) [Req 6]
+- [x] **Checkpoint B** — `pytest`, `npm test`, `npm run test:e2e` lulus
 
 ## Gelombang C — Frontend
 - [ ] C1 `lib/strings.ts`; migrasikan semua komponen ke kamus (satu tool per commit) [Req 2]
@@ -27,3 +27,11 @@
 - [ ] D2 `dpia-ringkas.md` + klasifikasi data (draf untuk Compliance) [Req 7]
 - [ ] D3 `dr.md`: RTO/RPO usulan, prosedur restore & backup lintas region; restore drill dijalankan manusia [Req 9]
 - [ ] D4 `@verifier` bukti penuh; README tautkan `docs/ops/`
+
+## Catatan gelombang B
+- Fixture dibangkitkan (`backend/tools/make_fixtures.py`) — scan = PDF gambar-saja; `tests/conftest.py` + `tests/integration/`.
+- Test integrasi menemukan dan memperbaiki 3 bug nyata: PDF rusak → 500 (merge/rearrange/remove-pages; kini 422 via `open_reader`),
+  op teks tanpa `font`/`font_size` → KeyError 500 di edit-overlay (default kini tersimpan di validator), PDF 0 halaman di edit-overlay → 422.
+- Vitest (jsdom) hanya untuk logika murni `src/lib/*`; `@testing-library/react` belum ditambahkan (belum ada test komponen) — YAGNI.
+- Playwright memakai backend sungguhan: `E2E_DATABASE_URL=… PYTHON=… PW_CHANNEL=chrome npm run test:e2e` (CI: Chromium bawaan, `playwright install --with-deps chromium`).
+- Uji beban: `loadtest/` (Locust). Laporan lokal di `loadtest/README.md`.

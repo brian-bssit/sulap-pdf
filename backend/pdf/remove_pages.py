@@ -6,7 +6,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
-from pypdf import PdfReader, PdfWriter
+from pypdf import PdfWriter
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
@@ -15,7 +15,7 @@ from db.database import get_db
 from auth.dependencies import get_current_user
 from audit import log_audit
 from pdf.dl_headers import attachment_filename
-from pdf.errors import raise_if_encrypted
+from pdf.errors import open_reader, raise_if_encrypted
 from pdf.upload import save_upload
 
 logger = logging.getLogger("cloudpdf")
@@ -94,7 +94,7 @@ async def remove_pages(
 
 
 def _process(input_path: Path, output_path: Path, remove: list[int]) -> tuple[int, int]:
-    reader = PdfReader(str(input_path))
+    reader = open_reader(input_path)
     total = len(reader.pages)
     if total > settings.max_pages_rearrange:
         raise HTTPException(status_code=400, detail=f"Maksimal {settings.max_pages_rearrange} halaman")

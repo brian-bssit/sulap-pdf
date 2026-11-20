@@ -358,6 +358,16 @@ cp -r out/* ../backend/static/
 # proxy and will break login; always serve the static build from FastAPI.
 ```
 
+### Testing
+
+```bash
+cd backend && PYTHONPATH=. pytest -q tests          # unit + integrasi (qpdf/LibreOffice di-SKIP bila tak ada)
+cd frontend && npm test                             # Vitest (logika lib/)
+E2E_DATABASE_URL=postgresql+asyncpg://postgres@localhost:5432/e2e PYTHON=$(which python) \
+  PW_CHANNEL=chrome npm run test:e2e                # Playwright vs backend sungguhan (Postgres + dev-login)
+```
+Uji beban: `loadtest/README.md`.
+
 ### Dev Auth Bypass
 
 Aktif hanya jika dua-duanya: `ENVIRONMENT` **bukan** `production` dan `DEV_LOGIN_ENABLED=true`.

@@ -337,6 +337,12 @@ def _validate_ops(raw: str, total_pages: int) -> list[dict]:
                 raise HTTPException(status_code=400, detail="opacity harus 0-1")
 
         item = dict(op)
+        # Default yang divalidasi lewat .get() harus ikut tersimpan: _apply_overlay membaca op["font"] /
+        # op["font_size"] langsung (tanpa ini op teks tanpa font → KeyError → 500).
+        if otype in ("text", "stamp"):
+            item["font_size"] = op.get("font_size", 24)
+        if otype == "text":
+            item["font"] = op.get("font", "Helvetica")
         item["page"] = idx
         item["color"] = color
         validated.append(item)
@@ -355,6 +361,8 @@ def _run_pdf_job(
 
     try:
         total_pages = len(pdf.pages)
+        if total_pages == 0:
+            raise HTTPException(status_code=422, detail="PDF rusak atau tidak memiliki halaman")
         if total_pages > max_pages:
             raise HTTPException(status_code=400, detail=f"Maksimal {max_pages} halaman")
 
