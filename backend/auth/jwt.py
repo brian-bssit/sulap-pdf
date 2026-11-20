@@ -1,9 +1,9 @@
-import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
-from jose import jwt, JWTError
+import jwt
+from jwt import PyJWTError
 
 from config import settings
 
@@ -14,7 +14,7 @@ def create_token(user_id: str, email: str) -> str:
     payload = {
         "user_id": user_id,
         "email": email,
-        "exp": datetime.utcnow() + timedelta(days=settings.jwt_expiry_days),
+        "exp": datetime.now(timezone.utc) + timedelta(hours=settings.jwt_expiry_hours),
     }
     return jwt.encode(payload, settings.secret_key, algorithm="HS256")
 
@@ -22,7 +22,7 @@ def create_token(user_id: str, email: str) -> str:
 def decode_token(token: str) -> dict | None:
     try:
         return jwt.decode(token, settings.secret_key, algorithms=["HS256"])
-    except JWTError:
+    except PyJWTError:
         return None
 
 

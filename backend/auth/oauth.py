@@ -13,6 +13,7 @@ from config import settings
 from db.database import get_db
 from db.queries import get_user_by_google_sub, create_user, update_last_login
 from auth.jwt import create_token
+from auth.domain import check_identity
 from audit import log_audit
 
 try:
@@ -76,7 +77,7 @@ def _set_jwt_cookie(response, token: str):
         secure=settings.frontend_url.startswith("https"),
         samesite="strict",
         path="/api",
-        max_age=settings.jwt_expiry_days * 86400,
+        max_age=settings.jwt_expiry_hours * 3600,
     )
 
 
@@ -114,6 +115,12 @@ async def google_callback(request: Request, db: AsyncSession = Depends(get_db)):
         if not google_sub or not email:
             logger.error("Google userinfo missing sub or email")
             return RedirectResponse(url=f"{settings.frontend_url}/?error=auth_failed")
+
+        try:
+            check_identity(email, userinfo.get("email_verified"), userinfo.get("hd"))
+        except HTTPException as e:
+            await log_audit(db, request, None, email, "GOOGLE_LOGIN", status="FAILED", error_message=str(e.detail))
+            return RedirectResponse(url=f"{settings.frontend_url}/?error=domain_not_allowed")
 
         user = await get_user_by_google_sub(db, google_sub)
         is_new = user is None
@@ -222,6 +229,12 @@ async def google_token_login(request: Request, db: AsyncSession = Depends(get_db
     email = info.get("email", "")
     if not sub or not email:
         raise HTTPException(status_code=401, detail="Google authentication failed")
+
+    try:
+        check_identity(email, info.get("email_verified"), info.get("hd"))
+    except HTTPException as e:
+        await log_audit(db, request, None, email, "GOOGLE_LOGIN", status="FAILED", error_message=str(e.detail))
+        raise
 
     display_name = info.get("name") or email.split("@")[0]
 

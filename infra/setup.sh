@@ -45,9 +45,22 @@ gcloud sql instances create "$DB_INSTANCE" \
   --storage-size=10 \
   --storage-type=SSD \
   --project="$PROJECT_ID" \
-  --no-backup \
-  --no-deletion-protection \
+  --activation-policy=ALWAYS \
+  --backup-start-time=18:00 \
+  --enable-point-in-time-recovery \
+  --retained-backups-count=14 \
+  --deletion-protection \
   2>/dev/null || echo "  (already exists)"
+
+# Instance lama (dibuat dengan --no-backup / activation NEVER) → samakan; idempoten.
+gcloud sql instances patch "$DB_INSTANCE" \
+  --activation-policy=ALWAYS \
+  --backup-start-time=18:00 \
+  --enable-point-in-time-recovery \
+  --retained-backups-count=14 \
+  --deletion-protection \
+  --project="$PROJECT_ID" \
+  --quiet
 
 gcloud sql databases create "$DB_NAME" \
   --instance="$DB_INSTANCE" \

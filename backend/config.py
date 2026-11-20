@@ -22,11 +22,14 @@ class Settings(BaseSettings):
 
     # JWT
     secret_key: str = DEFAULT_SECRET_KEY
-    jwt_expiry_days: int = 7
+    jwt_expiry_hours: int = 8
 
     # Google OAuth
     google_client_id: str = ""
     google_client_secret: str = ""
+    # Domain email yang boleh login, pisah koma (mis. "banksampoerna.com").
+    # Kosong = tanpa batas (hanya boleh di non-production).
+    allowed_email_domains: str = ""
 
     # PDF
     max_file_size_mb: int = 30
@@ -47,7 +50,16 @@ class Settings(BaseSettings):
             raise ValueError(
                 "SECRET_KEY wajib di-set (bukan default) saat environment=production"
             )
+        # Tanpa allowlist, akun Google mana pun bisa login → tolak start.
+        if self.environment == "production" and not self.allowed_domains:
+            raise ValueError(
+                "ALLOWED_EMAIL_DOMAINS wajib di-set saat environment=production"
+            )
         return self
+
+    @property
+    def allowed_domains(self) -> set[str]:
+        return {d.strip().lower() for d in self.allowed_email_domains.split(",") if d.strip()}
 
 
 settings = Settings()

@@ -86,7 +86,8 @@ Internal document processing toolkit for Bank Sahabat Sampoerna. Stateless, zero
 ### Security & Compliance
 - **Google OAuth** — GIS popup flow (client_id only, no client_secret needed)
 - **Auto-provisioning** — new users created on first login via `google_sub`
-- **JWT cookie** — `SameSite=Strict`, `HttpOnly`, 7-day expiry (`Secure` when served over HTTPS)
+- **JWT cookie** — `SameSite=Strict`, `HttpOnly`, 8-hour expiry, configurable (`Secure` when served over HTTPS)
+- **Batas domain login** — hanya email dengan domain di `ALLOWED_EMAIL_DOMAINS` + `email_verified`; selain itu 403, tercatat `GOOGLE_LOGIN FAILED`
 - **Single-origin CORS** — only `FRONTEND_URL` is allowlisted (`allow_origins` + `allow_credentials`)
 - **Role gating** — `/api/admin/*` requires `role == "admin"` (`get_current_admin_user`)
 - **Origin check** — `OriginCheckMiddleware` menolak request lintas-origin (`Origin`/`Referer` ≠ `FRONTEND_URL`); CSRF defense di sisi API
@@ -298,7 +299,8 @@ All config via environment variables (`.env` or Secret Manager).
 | `REQUEST_TIMEOUT_SECONDS` | No | `600` | Processing timeout |
 | `MAX_PAGES_REARRANGE` | No | `200` | Page limit for rearrange |
 | `MAX_PAGES_EDIT` | No | `200` | Page limit for edit-overlay |
-| `JWT_EXPIRY_DAYS` | No | `7` | Cookie/session duration |
+| `JWT_EXPIRY_HOURS` | No | `8` | Cookie/session duration |
+| `ALLOWED_EMAIL_DOMAINS` | Prod: Yes | `""` | Domain email yang boleh login (koma). Kosong + `ENVIRONMENT=production` → start gagal |
 | `CLEANUP_INTERVAL_SECONDS` | No | `300` | Orphan file cleanup interval |
 | `ORPHAN_AGE_SECONDS` | No | `900` | File age before cleanup |
 
