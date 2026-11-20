@@ -169,3 +169,10 @@ Perbaikan: `resolve()` jalur lalu tolak bila bukan di bawah `static_dir`. Tanpa 
 Temuan tambahan yang ikut diperbaiki:
 - **CSV/formula injection:** ekspor log audit dan daftar user kini menetralkan sel berawalan `= + - @` (nama berkas dan email berasal dari user).
 - **pdfjs-dist lama (4.0.379)** rentan eksekusi JavaScript lewat PDF berbahaya (CVE-2024-4367, diperbaiki di ≥ 4.2.67); versi 4.10.38 sudah memperbaikinya.
+
+## Pembaruan: Gelombang A selesai (2026-11-20)
+| Butir | Status baru | Bukti |
+|---|---|---|
+| 32 Force logout idle 10 menit | **OK** | `IdleGuard` (peringatan 1 menit + keluar otomatis), server menolak sesi idle (`SESSION_IDLE`), 14 tes unit, skrip Postgres (idle → 401), e2e Playwright (peringatan → keluar; "Tetap masuk" memperpanjang) |
+| 33 Tanpa multi-session | **OK** | `users.session_id` (migrasi 0003); login kedua → sesi pertama 401 `SESSION_REPLACED`; e2e dua browser; audit `SESSION_REPLACED` |
+| 38 Log login & logout | **OK** | Login, logout (`detail.reason=idle` bila dipaksa), penggantian sesi, dan idle-expiry tercatat |

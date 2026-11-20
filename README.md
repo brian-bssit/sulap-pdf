@@ -309,7 +309,8 @@ All config via environment variables (`.env` or Secret Manager).
 | `REQUEST_TIMEOUT_SECONDS` | No | `600` | Processing timeout |
 | `MAX_PAGES_REARRANGE` | No | `200` | Page limit for rearrange |
 | `MAX_PAGES_EDIT` | No | `200` | Page limit for edit-overlay |
-| `JWT_EXPIRY_HOURS` | No | `8` | Cookie/session duration |
+| `JWT_EXPIRY_HOURS` | No | `8` | Batas absolut sesi |
+| `IDLE_TIMEOUT_SECONDS` | No | `600` | Keluar otomatis bila tak ada aktivitas (klien menampilkan peringatan; server menolak sesi idle dengan kelonggaran 60 detik) |
 | `RATE_LIMIT_PER_MIN` | No | `10` | Operasi per user per menit (0 = nonaktif); lebih → 429 + `Retry-After` |
 | `QUOTA_PER_DAY` | No | `200` | Operasi per user per hari (0 = nonaktif) |
 | `ALLOWED_EMAIL_DOMAINS` | Prod: Yes | `""` | Domain email yang boleh login (koma). Kosong + `ENVIRONMENT=production` → start gagal |

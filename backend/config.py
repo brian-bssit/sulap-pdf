@@ -22,7 +22,8 @@ class Settings(BaseSettings):
 
     # JWT
     secret_key: str = DEFAULT_SECRET_KEY
-    jwt_expiry_hours: int = 8
+    jwt_expiry_hours: int = 8  # batas absolut sesi
+    idle_timeout_seconds: int = 600  # sesi berakhir bila tak ada aktivitas (checklist: 10 menit)
 
     # Google OAuth
     google_client_id: str = ""

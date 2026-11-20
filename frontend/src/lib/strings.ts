@@ -220,8 +220,17 @@ export const t = {
       domain_not_allowed: "Akun tidak diizinkan. Gunakan email korporat.",
       invalid_state: "Sesi masuk kedaluwarsa. Coba lagi.",
       auth_failed: "Masuk dengan Google gagal. Coba lagi.",
+      session_idle: "Sesi berakhir karena tidak ada aktivitas. Silakan masuk kembali.",
+      session_replaced: "Sesi berakhir karena akun ini masuk di tempat lain. Silakan masuk kembali.",
+      session_invalid: "Sesi tidak valid. Silakan masuk kembali.",
     } as Record<string, string>,
     noticeTitle: "Pernyataan Keamanan & Privasi",
+  },
+  idle: {
+    title: "Sesi akan berakhir",
+    body: (seconds: number) => `Tidak ada aktivitas. Anda akan keluar otomatis dalam ${seconds} detik.`,
+    stay: "Tetap masuk",
+    logoutNow: "Keluar sekarang",
   },
   admin: {
     users: "Manajemen User",

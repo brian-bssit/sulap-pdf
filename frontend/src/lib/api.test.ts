@@ -20,9 +20,9 @@ function setPath(pathname: string) {
 }
 
 // Adapter palsu: menolak dengan bentuk error axios (config + response).
-function failWith(status: number, data: unknown, responseType?: "blob") {
+function failWith(status: number, data: unknown, responseType?: "blob", headers: Record<string, string> = {}) {
   api.defaults.adapter = (config: InternalAxiosRequestConfig) =>
-    Promise.reject({ config: { ...config, responseType }, response: { status, data, headers: {}, config } });
+    Promise.reject({ config: { ...config, responseType }, response: { status, data, headers, config } });
 }
 
 describe("interceptor respons", () => {
@@ -31,10 +31,21 @@ describe("interceptor respons", () => {
     setPath("/dashboard");
   });
 
-  it("401 pada endpoint non-auth → redirect /login", async () => {
+  it("401 pada endpoint non-auth → redirect ke halaman login (/)", async () => {
     failWith(401, {});
     await expect(api.get("/api/pdf/compress")).rejects.toBeTruthy();
-    expect(assign).toHaveBeenCalledWith("/login");
+    expect(assign).toHaveBeenCalledWith("/");
+  });
+
+  it.each([
+    ["SESSION_IDLE", "/?error=session_idle"],
+    ["SESSION_REPLACED", "/?error=session_replaced"],
+    ["SESSION_INVALID", "/?error=session_invalid"],
+    ["ALASAN_ASING", "/"],
+  ])("401 dengan X-Auth-Reason %s → %s", async (reason, target) => {
+    failWith(401, {}, undefined, { "x-auth-reason": reason });
+    await expect(api.get("/api/pdf/compress")).rejects.toBeTruthy();
+    expect(assign).toHaveBeenCalledWith(target);
   });
 
   it("401 pada /api/auth/* tidak redirect (mis. cek /me di halaman login)", async () => {
@@ -43,8 +54,8 @@ describe("interceptor respons", () => {
     expect(assign).not.toHaveBeenCalled();
   });
 
-  it("401 saat sudah di /login tidak redirect berulang", async () => {
-    setPath("/login");
+  it.each(["/login", "/"])("401 saat sudah di %s tidak redirect berulang", async (p) => {
+    setPath(p);
     failWith(401, {});
     await expect(api.get("/api/pdf/compress")).rejects.toBeTruthy();
     expect(assign).not.toHaveBeenCalled();

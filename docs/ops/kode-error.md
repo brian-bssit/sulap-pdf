@@ -12,6 +12,9 @@
 | 400 | "Aksi tidak dikenal…", "Operasi harus berupa array non-kosong", "Halaman N di luar jangkauan" | Permintaan anotasi/atur ulang tak valid | Muat ulang halaman lalu ulangi |
 | 400 | "level harus low, balanced, atau high" | Tingkat kompresi tak dikenal | – (klien non-UI) |
 | 401 | "Not authenticated" / "Invalid or expired token" | Sesi tidak ada atau habis | Login ulang |
+| 401 | "Sesi berakhir karena tidak ada aktivitas." (`X-Auth-Reason: SESSION_IDLE`) | Tidak ada aktivitas melebihi batas idle | Login ulang |
+| 401 | "Sesi berakhir karena login di tempat lain." (`SESSION_REPLACED`) | Akun yang sama masuk di browser/perangkat lain | Login ulang; pastikan akun tidak dipakai bersama |
+| 401 | "Sesi tidak valid. Silakan login ulang." (`SESSION_INVALID`) | Token lama tanpa penanda sesi | Login ulang |
 | 401 | "Google authentication failed" | Token Google tidak valid / email belum terverifikasi | Coba login lagi |
 | 403 | "Akun tidak diizinkan. Gunakan email korporat." | Email di luar domain yang diizinkan | Pakai akun korporat |
 | 403 | "Akses auditor atau admin diperlukan" / "Admin access required" | Role tidak cukup | Hubungi admin |
@@ -28,4 +31,4 @@
 | 504 | "Proses timeout. Coba file lebih kecil" | Proses melebihi batas waktu | Kecilkan file |
 
 Status audit: `SUCCESS`, `FAILED`, `CANCELLED_BY_CLIENT`. Aksi: `COMPRESS`, `MERGE`, `REARRANGE`, `REMOVE_PAGES`, `CONVERT`,
-`EDIT_OVERLAY`, `GOOGLE_LOGIN`, `LOGOUT`, `USER_ROLE_CHANGE`, `RATE_LIMITED`.
+`EDIT_OVERLAY`, `GOOGLE_LOGIN`, `LOGOUT` (`detail.reason=idle` bila dipaksa idle), `SESSION_REPLACED`, `SESSION_IDLE_EXPIRED`, `USER_ROLE_CHANGE`, `RATE_LIMITED`.

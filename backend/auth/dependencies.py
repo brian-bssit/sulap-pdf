@@ -4,6 +4,7 @@ from fastapi import Request, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.jwt import decode_token, get_token_from_cookie
+from auth.session import validate_session
 from db.database import get_db
 from db.models import User
 from db.queries import get_user_by_id
@@ -31,6 +32,8 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
     user = await get_user_by_id(db, uid)
     if not user or not user.is_active:
         raise HTTPException(status_code=401, detail="User not found or inactive")
+
+    await validate_session(db, request, user, payload)
 
     ctx = request_ctx.get()
     if ctx is not None:

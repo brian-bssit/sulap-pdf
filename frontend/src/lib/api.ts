@@ -1,4 +1,5 @@
 import axios from "axios";
+import { redirectToLogin } from "./session";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "",
@@ -20,15 +21,12 @@ api.interceptors.request.use((config) => {
 //     parse ke object {detail} supaya pemanggil bisa baca pesan error backend.
 api.interceptors.response.use(
   (response) => response,
-  async (error: { config?: { url?: string; responseType?: string }; response?: { status?: number; data?: unknown } }) => {
+  async (error: { config?: { url?: string; responseType?: string }; response?: { status?: number; data?: unknown; headers?: Record<string, string> } }) => {
     const { config, response } = error;
     if (response) {
       const url = config?.url ?? "";
       if (response.status === 401 && !url.includes("/api/auth/")) {
-        const path = typeof window !== "undefined" ? window.location.pathname : "";
-        if (!path.startsWith("/login")) {
-          window.location.assign("/login");
-        }
+        redirectToLogin((response as { headers?: Record<string, string> }).headers?.["x-auth-reason"]);
       }
       if (config?.responseType === "blob" && response.data instanceof Blob) {
         try {

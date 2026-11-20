@@ -18,6 +18,7 @@ Layanan: Cloud Run `sulap` (region `asia-southeast2`), DB Cloud SQL `sulap-db`. 
 | Login menggantung ("pending") | Akses lewat host yang salah (bukan URL kanonik) | Pakai `gcloud run services describe sulap --format='value(status.url)'`. CORS dan OAuth hanya mengizinkan satu origin (`FRONTEND_URL`). |
 | Login ditolak 403 "Akun tidak diizinkan" | Email di luar `ALLOWED_EMAIL_DOMAINS` atau `email_verified` palsu | Normal untuk akun non-korporat. Lihat `audit_logs` (`GOOGLE_LOGIN` + `FAILED`). |
 | Deploy merah / revisi baru gagal start | Container menjalankan `alembic upgrade head` lebih dulu; DB tak terjangkau atau migrasi gagal | Revisi lama tetap melayani. Pastikan DB `RUNNABLE`, baca log startup, deploy ulang. Rollback skema: lihat `infra/harden.md` §3. |
+| User sering "keluar sendiri" | Idle 10 menit atau akun dipakai di dua tempat (login terbaru menang) | Lihat audit `SESSION_IDLE_EXPIRED` / `SESSION_REPLACED` untuk user itu. Normal bila akun dibagi; pakai akun masing-masing. |
 | User melapor 429 | Kuota 10/menit atau 200/hari per user tercapai | Cek `audit_logs` (`RATE_LIMITED`, `user_id`). Pesan memuat `Retry-After`. Ubah `RATE_LIMIT_PER_MIN` / `QUOTA_PER_DAY` hanya bila ada alasan sah. |
 | 413 saat unggah | File > 30 MB (atau total gabung > 30 MB) | Normal. Sarankan kompres/pecah dulu. |
 | 422 "PDF terkunci password" | PDF berenkripsi | Normal. Minta user membuka kunci dulu (fitur Unlock belum tersedia). |

@@ -1,6 +1,8 @@
 "use client";
 
+import { redirectToLogin } from "@/lib/session";
 import { t } from "@/lib/strings";
+import IdleGuard from "@/components/IdleGuard";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -52,17 +54,25 @@ const pageTitles: Record<Tab, { title: string; subtitle: string }> = t.pages;
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User>(DEMO_USER);
+  const [idleSeconds, setIdleSeconds] = useState(0);
   const [activeTab, setActiveTab] = useState<Tab>("compress");
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me", { credentials: "include" })
       .then((res) => {
-        if (res.ok) return res.json();
-        if (res.status === 401) router.push("/");
-        throw new Error("Auth failed");
+        if (res.status === 401) {
+          redirectToLogin(res.headers.get("x-auth-reason")); // membawa alasan (idle / login di tempat lain)
+          return null;
+        }
+        if (!res.ok) throw new Error("Auth failed");
+        return res.json();
       })
-      .then((data) => setUser({ name: data.display_name, email: data.email, role: data.role }))
+      .then((data) => {
+        if (!data) return;
+        setUser({ name: data.display_name, email: data.email, role: data.role });
+        setIdleSeconds(data.idle_timeout_seconds ?? 0);
+      })
       .catch(() => router.push("/"));
   }, [router]);
 
@@ -84,6 +94,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
+      {idleSeconds > 0 && <IdleGuard timeoutSeconds={idleSeconds} />}
       {/* Sidebar */}
       <aside
         id="dashboard-sidebar"

@@ -13,5 +13,5 @@ Akun dibuat otomatis saat login Google pertama (domain `banksampoerna.com`) deng
 | Ubah role user | – | – | ✔ (tercatat `USER_ROLE_CHANGE`) |
 | Menurunkan admin terakhir yang aktif | – | – | ditolak sistem |
 
-Pembatasan lain yang berlaku untuk semua role: hanya email domain korporat dan `email_verified`; kuota 10 operasi/menit dan 200/hari;
+Sesi: satu sesi aktif per akun (login terbaru menang; sesi lama ditolak dengan pesan "login di tempat lain") dan keluar otomatis setelah 10 menit tanpa aktivitas (peringatan 1 menit sebelumnya). Pembatasan lain yang berlaku untuk semua role: hanya email domain korporat dan `email_verified`; kuota 10 operasi/menit dan 200/hari;
 sesi 8 jam. Role dibaca dari database pada setiap request, jadi perubahan role atau penonaktifan akun berlaku seketika.

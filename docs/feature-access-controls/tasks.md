@@ -13,13 +13,13 @@ Urutan: Gelombang 0 dulu (kerentanan), lalu A, lalu B. Tiap gelombang diakhiri c
 - [x] **Checkpoint 0** — pytest, vitest, tsc, lint, e2e lulus; ulangi `curl --path-as-is` (harus 404)
 
 ## Gelombang A — Sesi
-- [ ] A1 Migrasi 0003 (`session_id`, `last_seen_at`) + model [R2]
-- [ ] A2 `auth/session.py`, token dengan `sid`/`auth_time`, pemeriksaan di `get_current_user`, header `X-Auth-Reason` [R1, R2]
-- [ ] A3 `POST /api/auth/ping`; audit login/ganti-sesi/idle [R4]
-- [ ] A4 Tes unit + integrasi (Postgres): idle, sesi diganti, batas 8 jam, token lama [R1–R3]
-- [ ] A5 `IdleGuard.tsx`, interceptor `x-auth-reason`, strings, halaman login [R1, R3]
-- [ ] A6 e2e Playwright: dua konteks browser (login kedua menendang pertama); idle dengan waktu dipercepat [R1, R2]
-- [ ] **Checkpoint A**
+- [x] A1 Migrasi 0003 (`session_id`, `last_seen_at`) + model [R2]
+- [x] A2 `auth/session.py`, token dengan `sid`/`auth_time`, pemeriksaan di `get_current_user`, header `X-Auth-Reason` [R1, R2]
+- [x] A3 `POST /api/auth/ping`; audit login/ganti-sesi/idle [R4]
+- [x] A4 Tes unit + integrasi (Postgres): idle, sesi diganti, batas 8 jam, token lama [R1–R3]
+- [x] A5 `IdleGuard.tsx`, interceptor `x-auth-reason`, strings, halaman login [R1, R3]
+- [x] A6 e2e Playwright: dua konteks browser (login kedua menendang pertama); idle dengan waktu dipercepat [R1, R2]
+- [x] **Checkpoint A**
 
 ## Gelombang B — Peran dan dual control
 - [ ] B1 `auth/roles.py` + migrasi 0004 (data + tabel) + model [R5]
@@ -34,3 +34,9 @@ Urutan: Gelombang 0 dulu (kerentanan), lalu A, lalu B. Tiap gelombang diakhiri c
 ## Penutup
 - [ ] Z1 Perbarui `docs/security/baseline-checklist-evaluation.md` (status butir 7, 32, 33, 35, 38, 41, 42, 49, 52, 54, 66, 69, 75, 77, 78) dengan bukti
 - [ ] Z2 `@verifier` bukti penuh
+
+## Catatan Gelombang A
+- Klien memaksa keluar tepat di `IDLE_TIMEOUT_SECONDS`; server jadi pengaman cadangan dengan kelonggaran 60 detik (`IDLE_GRACE_SECONDS`) agar jeda ping tak mengeluarkan user aktif lebih awal.
+- Saat peringatan tampil hanya tombol "Tetap masuk" yang memperpanjang sesi (gerakan pointer biasa tidak), supaya dialog tidak lenyap di tengah klik.
+- Aktivitas dibagi antar-tab lewat localStorage; operasi yang berjalan (unggah/proses) dihitung aktivitas.
+- e2e memakai `IDLE_TIMEOUT_SECONDS=20`. `npx playwright test` memakai build lama; selalu jalankan `npm run test:e2e` setelah mengubah frontend.

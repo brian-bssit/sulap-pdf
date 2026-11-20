@@ -22,6 +22,7 @@ export function useJob() {
     setResult(null);
     setPercent(0);
     setPhase("uploading");
+    window.dispatchEvent(new Event("sulap:activity")); // operasi berjalan = user aktif (IdleGuard)
     try {
       const res = await api.post(url, form, {
         responseType: "blob",
@@ -42,6 +43,7 @@ export function useJob() {
       return out;
     } finally {
       setPhase("idle");
+      window.dispatchEvent(new Event("sulap:activity"));
     }
   }, []);
 

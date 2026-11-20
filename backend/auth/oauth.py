@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config import settings
 from db.database import get_db
 from db.queries import get_user_by_google_sub, create_user, update_last_login
-from auth.jwt import create_token
+from auth.session import issue_token
 from auth.domain import check_identity
 from audit import log_audit
 
@@ -139,7 +139,7 @@ async def google_callback(request: Request, db: AsyncSession = Depends(get_db)):
             status="SUCCESS",
         )
 
-        jwt_token = create_token(str(user.id), user.email)
+        jwt_token = await issue_token(db, request, user)
         response = RedirectResponse(url="/dashboard")
         _set_jwt_cookie(response, jwt_token)
         return response
@@ -188,7 +188,7 @@ async def dev_login(request: Request, db: AsyncSession = Depends(get_db)):
         status="SUCCESS",
     )
 
-    jwt_token = create_token(str(user.id), user.email)
+    jwt_token = await issue_token(db, request, user)
     response = RedirectResponse(url="/dashboard")
     _set_jwt_cookie(response, jwt_token)
     return response
@@ -247,7 +247,7 @@ async def google_token_login(request: Request, db: AsyncSession = Depends(get_db
 
     await log_audit(db, request, str(user.id), user.email, "GOOGLE_LOGIN", status="SUCCESS")
 
-    token = create_token(str(user.id), user.email)
+    token = await issue_token(db, request, user)
     response = JSONResponse(
         {"user": {"name": user.display_name, "email": user.email, "role": user.role}}
     )

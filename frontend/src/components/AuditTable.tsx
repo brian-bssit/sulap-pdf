@@ -148,6 +148,8 @@ export default function AuditTable() {
             <option value="EDIT_OVERLAY">EDIT OVERLAY</option>
             <option value="GOOGLE_LOGIN">GOOGLE LOGIN</option>
             <option value="LOGOUT">LOGOUT</option>
+            <option value="SESSION_REPLACED">SESSION REPLACED</option>
+            <option value="SESSION_IDLE_EXPIRED">SESSION IDLE EXPIRED</option>
             <option value="USER_ROLE_CHANGE">USER ROLE CHANGE</option>
             <option value="RATE_LIMITED">RATE LIMITED</option>
           </select>
