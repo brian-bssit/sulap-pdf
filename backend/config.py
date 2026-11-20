@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     max_pages_rearrange: int = 200
     max_pages_edit: int = 200
 
+    # Rate limit / kuota per user (dihitung dari audit_logs; 0 = nonaktif)
+    rate_limit_per_min: int = 10
+    quota_per_day: int = 200
+
     # Cleanup
     cleanup_interval_seconds: int = 300
     orphan_age_seconds: int = 900

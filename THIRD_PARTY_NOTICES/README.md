@@ -6,7 +6,7 @@ Notis lisensi pihak ketiga SULAP PDF. Struktur:
 THIRD_PARTY_NOTICES/
 ├── README.md            ← file ini
 ├── _licenses/           ← teks lisensi kanonik (Apache-2.0, MPL-2.0, OFL-1.1) dipakai bersama
-├── python/              ← 48 komponen PyPI + salinan LICENSE tiap distribusi + index.json
+├── python/              ← 49 komponen PyPI + salinan LICENSE tiap distribusi + index.json
 ├── npm/                 ← 30 komponen npm (installed tree) + salinan LICENSE + index.json
 ├── system/              ← Debian base, CPython, qpdf, LibreOffice, curl (index.json + *.md)
 ├── pdfjs/               ← pdfjs-dist 4.0.379 + LICENSE + catatan header worker

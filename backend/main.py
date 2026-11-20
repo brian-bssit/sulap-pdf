@@ -9,10 +9,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
 from db.database import engine
-from db.models import Base
 from router import api_router
 from middleware.error_handler import register_error_handlers
 from middleware.origin import OriginCheckMiddleware
+from middleware.body_limit import BodyLimitMiddleware
+from middleware.security_headers import SecurityHeadersMiddleware
 
 logger = logging.getLogger("cloudpdf")
 
@@ -46,14 +47,6 @@ async def lifespan(app: FastAPI):
     )
     logger.info(f"Starting {settings.app_name}")
 
-    # Create DB tables (non-fatal if DB unavailable)
-    try:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        logger.info("Database tables verified")
-    except Exception as e:
-        logger.warning(f"Database not available, tables not created: {e}")
-
     # Start orphan cleanup
     cleanup_task = asyncio.create_task(cleanup_orphaned_files())
 
@@ -74,6 +67,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(OriginCheckMiddleware, allowed_origin=settings.frontend_url)
+# Batas total = 30MB (agregat merge) + 1MiB overhead multipart. Paling luar → ditolak sebelum body dibaca.
+app.add_middleware(BodyLimitMiddleware, max_bytes=(settings.max_file_size_mb + 1) * 1024 * 1024)
+app.add_middleware(SecurityHeadersMiddleware, hsts=settings.frontend_url.startswith("https"))
 
 register_error_handlers(app)
 

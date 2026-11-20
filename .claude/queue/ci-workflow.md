@@ -43,7 +43,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
-      - run: pip install pip-audit && pip-audit -r backend/requirements.txt
+      - run: pip install pip-audit && pip-audit -r backend/requirements.lock --require-hashes
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - run: cd frontend && npm audit --omit=dev --audit-level=high

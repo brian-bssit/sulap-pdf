@@ -21,6 +21,27 @@
   "components": [
     {
       "type": "library",
+      "bom-ref": "pkg:pypi/alembic@1.20.1",
+      "name": "alembic",
+      "version": "1.20.1",
+      "purl": "pkg:pypi/alembic@1.20.1",
+      "author": "Mike Bayer <mike_mp@zzzcomputing.com>",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://alembic.sqlalchemy.org"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
       "bom-ref": "pkg:pypi/annotated-types@0.8.0",
       "name": "annotated-types",
       "version": "0.8.0",
@@ -42,10 +63,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/anyio@4.14.2",
+      "bom-ref": "pkg:pypi/anyio@4.16.0",
       "name": "anyio",
-      "version": "4.14.2",
-      "purl": "pkg:pypi/anyio@4.14.2",
+      "version": "4.16.0",
+      "purl": "pkg:pypi/anyio@4.16.0",
       "author": "Alex Gr\u00f6nholm <alex.gronholm@nextday.fi>",
       "licenses": [
         {
@@ -108,10 +129,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/certifi@2026.7.22",
+      "bom-ref": "pkg:pypi/certifi@2026.10.23",
       "name": "certifi",
-      "version": "2026.7.22",
-      "purl": "pkg:pypi/certifi@2026.7.22",
+      "version": "2026.10.23",
+      "purl": "pkg:pypi/certifi@2026.10.23",
       "author": "Kenneth Reitz",
       "externalReferences": [
         {
@@ -129,10 +150,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/cffi@2.1.0",
+      "bom-ref": "pkg:pypi/cffi@2.1.1",
       "name": "cffi",
-      "version": "2.1.0",
-      "purl": "pkg:pypi/cffi@2.1.0",
+      "version": "2.1.1",
+      "purl": "pkg:pypi/cffi@2.1.1",
       "author": "Armin Rigo, Maciej Fijalkowski",
       "licenses": [
         {
@@ -144,10 +165,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/charset-normalizer@3.4.9",
+      "bom-ref": "pkg:pypi/charset-normalizer@3.5.2",
       "name": "charset-normalizer",
-      "version": "3.4.9",
-      "purl": "pkg:pypi/charset-normalizer@3.4.9",
+      "version": "3.5.2",
+      "purl": "pkg:pypi/charset-normalizer@3.5.2",
       "author": "\"Ahmed R. TAHRI\" <tahri.ahmed@proton.me>",
       "licenses": [
         {
@@ -159,10 +180,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/click@8.4.2",
+      "bom-ref": "pkg:pypi/click@8.5.1",
       "name": "click",
-      "version": "8.4.2",
-      "purl": "pkg:pypi/click@8.4.2",
+      "version": "8.5.1",
+      "purl": "pkg:pypi/click@8.5.1",
       "licenses": [
         {
           "license": {
@@ -173,10 +194,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/cryptography@49.0.0",
+      "bom-ref": "pkg:pypi/cryptography@50.0.2",
       "name": "cryptography",
-      "version": "49.0.0",
-      "purl": "pkg:pypi/cryptography@49.0.0",
+      "version": "50.0.2",
+      "purl": "pkg:pypi/cryptography@50.0.2",
       "author": "The Python Cryptographic Authority and individual contributors <cryptography-dev@python.org>",
       "externalReferences": [
         {
@@ -194,36 +215,15 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/deprecated@1.3.1",
+      "bom-ref": "pkg:pypi/deprecated@3.0.1",
       "name": "Deprecated",
-      "version": "1.3.1",
-      "purl": "pkg:pypi/deprecated@1.3.1",
-      "author": "Laurent LAPORTE",
+      "version": "3.0.1",
+      "purl": "pkg:pypi/deprecated@3.0.1",
+      "author": "Laurent LAPORTE <laurent.laporte.pro@gmail.com>",
       "externalReferences": [
         {
           "type": "website",
           "url": "https://github.com/laurent-laporte-pro/deprecated"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:pypi/ecdsa@0.19.2",
-      "name": "ecdsa",
-      "version": "0.19.2",
-      "purl": "pkg:pypi/ecdsa@0.19.2",
-      "author": "Brian Warner",
-      "externalReferences": [
-        {
-          "type": "website",
-          "url": "http://github.com/tlsfuzzer/python-ecdsa"
         }
       ],
       "licenses": [
@@ -278,10 +278,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/greenlet@3.5.4",
+      "bom-ref": "pkg:pypi/greenlet@3.5.6",
       "name": "greenlet",
-      "version": "3.5.4",
-      "purl": "pkg:pypi/greenlet@3.5.4",
+      "version": "3.5.6",
+      "purl": "pkg:pypi/greenlet@3.5.6",
       "author": "Alexey Borzenkov <snaury@gmail.com>",
       "externalReferences": [
         {
@@ -341,10 +341,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/httptools@0.8.0",
+      "bom-ref": "pkg:pypi/httptools@0.9.0",
       "name": "httptools",
-      "version": "0.8.0",
-      "purl": "pkg:pypi/httptools@0.8.0",
+      "version": "0.9.0",
+      "purl": "pkg:pypi/httptools@0.9.0",
       "author": "Yury Selivanov <yury@magic.io>",
       "externalReferences": [
         {
@@ -383,10 +383,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/idna@3.18",
+      "bom-ref": "pkg:pypi/idna@3.20",
       "name": "idna",
-      "version": "3.18",
-      "purl": "pkg:pypi/idna@3.18",
+      "version": "3.20",
+      "purl": "pkg:pypi/idna@3.20",
       "author": "Kim Davies <kim+pypi@gumleaf.org>",
       "licenses": [
         {
@@ -409,6 +409,41 @@
           "url": "https://lxml.de/"
         }
       ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/mako@1.4.3",
+      "name": "Mako",
+      "version": "1.4.3",
+      "purl": "pkg:pypi/mako@1.4.3",
+      "author": "Mike Bayer <mike@zzzcomputing.com>",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://www.makotemplates.org/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/markupsafe@3.0.4",
+      "name": "MarkupSafe",
+      "version": "3.0.4",
+      "purl": "pkg:pypi/markupsafe@3.0.4",
       "licenses": [
         {
           "license": {
@@ -449,15 +484,15 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/pillow@12.3.0",
+      "bom-ref": "pkg:pypi/pillow@13.0.0",
       "name": "pillow",
-      "version": "12.3.0",
-      "purl": "pkg:pypi/pillow@12.3.0",
+      "version": "13.0.0",
+      "purl": "pkg:pypi/pillow@13.0.0",
       "author": "Jeffrey 'Alex' Clark <aclark@aclark.net>",
       "externalReferences": [
         {
           "type": "website",
-          "url": "https://python-pillow.github.io"
+          "url": "https://python-pillow.org"
         }
       ],
       "licenses": [
@@ -470,10 +505,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/pyasn1@0.6.4",
+      "bom-ref": "pkg:pypi/pyasn1@0.6.5",
       "name": "pyasn1",
-      "version": "0.6.4",
-      "purl": "pkg:pypi/pyasn1@0.6.4",
+      "version": "0.6.5",
+      "purl": "pkg:pypi/pyasn1@0.6.5",
       "author": "Ilya Etingof <etingof@gmail.com>",
       "externalReferences": [
         {
@@ -512,10 +547,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/pycparser@3.0",
+      "bom-ref": "pkg:pypi/pycparser@3.12",
       "name": "pycparser",
-      "version": "3.0",
-      "purl": "pkg:pypi/pycparser@3.0",
+      "version": "3.12",
+      "purl": "pkg:pypi/pycparser@3.12",
       "author": "Eli Bendersky <eliben@gmail.com>",
       "externalReferences": [
         {
@@ -533,10 +568,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/pydantic@2.13.4",
+      "bom-ref": "pkg:pypi/pydantic@2.14.4",
       "name": "pydantic",
-      "version": "2.13.4",
-      "purl": "pkg:pypi/pydantic@2.13.4",
+      "version": "2.14.4",
+      "purl": "pkg:pypi/pydantic@2.14.4",
       "author": "Samuel Colvin <s@muelcolvin.com>, Eric Jolibois <em.jolibois@gmail.com>, Hasan Ramezani <hasan.r67@gmail.com>, Adrian Garcia Badaracco <1755071+adriangb@users.noreply.github.com>, Terrence Dorsey <terry@pydantic.dev>, David Montague <david@pydantic.dev>, Serge Matveenko <lig@countzero.co>, Marcelo Trylesinski <marcelotryle@gmail.com>, Sydney Runkle <sydneymarierunkle@gmail.com>, David Hewitt <mail@davidhewitt.dev>, Alex Hall <alex.mojaki@gmail.com>, Victorien Plot <contact@vctrn.dev>",
       "externalReferences": [
         {
@@ -575,15 +610,36 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/pydantic_core@2.46.4",
+      "bom-ref": "pkg:pypi/pydantic_core@2.50.5",
       "name": "pydantic_core",
-      "version": "2.46.4",
-      "purl": "pkg:pypi/pydantic_core@2.46.4",
+      "version": "2.50.5",
+      "purl": "pkg:pypi/pydantic_core@2.50.5",
       "author": "Samuel Colvin <s@muelcolvin.com>, Adrian Garcia Badaracco <1755071+adriangb@users.noreply.github.com>, David Montague <david@pydantic.dev>, David Hewitt <mail@davidhewitt.dev>, Sydney Runkle <sydneymarierunkle@gmail.com>, Victorien Plot <contact@vctrn.dev>",
       "externalReferences": [
         {
           "type": "website",
           "url": "https://github.com/pydantic"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/pyjwt@2.15.1",
+      "name": "PyJWT",
+      "version": "2.15.1",
+      "purl": "pkg:pypi/pyjwt@2.15.1",
+      "author": "Jose Padilla <hello@jpadilla.com>",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/jpadilla/pyjwt"
         }
       ],
       "licenses": [
@@ -611,10 +667,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/python-dotenv@1.2.2",
+      "bom-ref": "pkg:pypi/python-dotenv@1.2.4",
       "name": "python-dotenv",
-      "version": "1.2.2",
-      "purl": "pkg:pypi/python-dotenv@1.2.2",
+      "version": "1.2.4",
+      "purl": "pkg:pypi/python-dotenv@1.2.4",
       "author": "Saurabh Kumar <me+github@saurabh-kumar.com>",
       "licenses": [
         {
@@ -626,31 +682,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/python-jose@3.3.0",
-      "name": "python-jose",
-      "version": "3.3.0",
-      "purl": "pkg:pypi/python-jose@3.3.0",
-      "author": "Michael Davis",
-      "externalReferences": [
-        {
-          "type": "website",
-          "url": "http://github.com/mpdavis/python-jose"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:pypi/python-multipart@0.0.32",
+      "bom-ref": "pkg:pypi/python-multipart@0.0.34",
       "name": "python-multipart",
-      "version": "0.0.32",
-      "purl": "pkg:pypi/python-multipart@0.0.32",
+      "version": "0.0.34",
+      "purl": "pkg:pypi/python-multipart@0.0.34",
       "author": "Andrew Dunham <andrew@du.nham.ca>",
       "externalReferences": [
         {
@@ -731,31 +766,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/six@1.17.0",
-      "name": "six",
-      "version": "1.17.0",
-      "purl": "pkg:pypi/six@1.17.0",
-      "author": "Benjamin Peterson",
-      "externalReferences": [
-        {
-          "type": "website",
-          "url": "https://github.com/benjaminp/six"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:pypi/sqlalchemy@2.0.51",
+      "bom-ref": "pkg:pypi/sqlalchemy@2.0.58",
       "name": "SQLAlchemy",
-      "version": "2.0.51",
-      "purl": "pkg:pypi/sqlalchemy@2.0.51",
+      "version": "2.0.58",
+      "purl": "pkg:pypi/sqlalchemy@2.0.58",
       "author": "Mike Bayer",
       "externalReferences": [
         {
@@ -794,10 +808,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/typing-inspection@0.4.2",
+      "bom-ref": "pkg:pypi/typing-inspection@0.4.5",
       "name": "typing-inspection",
-      "version": "0.4.2",
-      "purl": "pkg:pypi/typing-inspection@0.4.2",
+      "version": "0.4.5",
+      "purl": "pkg:pypi/typing-inspection@0.4.5",
       "author": "Victorien Plot <contact@vctrn.dev>",
       "externalReferences": [
         {
@@ -830,10 +844,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/urllib3@2.7.0",
+      "bom-ref": "pkg:pypi/urllib3@2.8.0",
       "name": "urllib3",
-      "version": "2.7.0",
-      "purl": "pkg:pypi/urllib3@2.7.0",
+      "version": "2.8.0",
+      "purl": "pkg:pypi/urllib3@2.8.0",
       "author": "Andrey Petrov <andrey.petrov@shazow.net>",
       "licenses": [
         {
@@ -866,10 +880,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/uvloop@0.22.1",
+      "bom-ref": "pkg:pypi/uvloop@0.23.0",
       "name": "uvloop",
-      "version": "0.22.1",
-      "purl": "pkg:pypi/uvloop@0.22.1",
+      "version": "0.23.0",
+      "purl": "pkg:pypi/uvloop@0.23.0",
       "author": "Yury Selivanov <yury@magic.io>",
       "licenses": [
         {
@@ -881,10 +895,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/watchfiles@1.2.0",
+      "bom-ref": "pkg:pypi/watchfiles@1.3.0",
       "name": "watchfiles",
-      "version": "1.2.0",
-      "purl": "pkg:pypi/watchfiles@1.2.0",
+      "version": "1.3.0",
+      "purl": "pkg:pypi/watchfiles@1.3.0",
       "author": "Samuel Colvin <s@muelcolvin.com>",
       "externalReferences": [
         {
@@ -902,10 +916,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/websockets@17.0",
+      "bom-ref": "pkg:pypi/websockets@17.4",
       "name": "websockets",
-      "version": "17.0",
-      "purl": "pkg:pypi/websockets@17.0",
+      "version": "17.4",
+      "purl": "pkg:pypi/websockets@17.4",
       "author": "Aymeric Augustin <aymeric.augustin@m4x.org>",
       "externalReferences": [
         {
@@ -923,10 +937,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/wrapt@2.4.0",
+      "bom-ref": "pkg:pypi/wrapt@2.5.2",
       "name": "wrapt",
-      "version": "2.4.0",
-      "purl": "pkg:pypi/wrapt@2.4.0",
+      "version": "2.5.2",
+      "purl": "pkg:pypi/wrapt@2.5.2",
       "author": "Graham Dumpleton <Graham.Dumpleton@gmail.com>",
       "externalReferences": [
         {

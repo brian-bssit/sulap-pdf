@@ -31,19 +31,19 @@ type Tab = "merge" | "compress" | "rearrange" | "remove-pages" | "convert" | "ed
 interface User {
   name: string;
   email: string;
-  role: "user" | "admin";
+  role: "user" | "admin" | "auditor";
 }
 
 const DEMO_USER: User = { name: "Loading...", email: "", role: "user" };
 
 const navItems: { id: Tab; label: string; icon: React.ReactNode; roles: string[] }[] = [
-  { id: "compress", label: "Compress PDF", icon: <Minimize2 size={20} />, roles: ["user", "admin"] },
-  { id: "merge", label: "Merge PDF", icon: <Layers size={20} />, roles: ["user", "admin"] },
-  { id: "rearrange", label: "Rearrange PDF", icon: <Grid3x3 size={20} />, roles: ["user", "admin"] },
-  { id: "remove-pages", label: "Remove Pages", icon: <Scissors size={20} />, roles: ["user", "admin"] },
-  { id: "convert", label: "Convert to PDF", icon: <FileUp size={20} />, roles: ["user", "admin"] },
-  { id: "edit", label: "Edit PDF", icon: <PenTool size={20} />, roles: ["user", "admin"] },
-  { id: "admin", label: "Admin Panel", icon: <ShieldAlert size={20} />, roles: ["admin"] },
+  { id: "compress", label: "Compress PDF", icon: <Minimize2 size={20} />, roles: ["user", "auditor", "admin"] },
+  { id: "merge", label: "Merge PDF", icon: <Layers size={20} />, roles: ["user", "auditor", "admin"] },
+  { id: "rearrange", label: "Rearrange PDF", icon: <Grid3x3 size={20} />, roles: ["user", "auditor", "admin"] },
+  { id: "remove-pages", label: "Remove Pages", icon: <Scissors size={20} />, roles: ["user", "auditor", "admin"] },
+  { id: "convert", label: "Convert to PDF", icon: <FileUp size={20} />, roles: ["user", "auditor", "admin"] },
+  { id: "edit", label: "Edit PDF", icon: <PenTool size={20} />, roles: ["user", "auditor", "admin"] },
+  { id: "admin", label: "Admin Panel", icon: <ShieldAlert size={20} />, roles: ["auditor", "admin"] },
 ];
 
 const pageTitles: Record<Tab, { title: string; subtitle: string }> = {
@@ -135,7 +135,7 @@ export default function DashboardPage() {
               <span className="ml-3">{item.label}</span>
               {item.id === "admin" && (
                 <span className="ml-auto text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">
-                  ADMIN
+                  {user.role.toUpperCase()}
                 </span>
               )}
             </button>
@@ -195,7 +195,7 @@ export default function DashboardPage() {
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-thin">
           <div className="max-w-5xl mx-auto w-full animate-[fadeIn_0.3s_ease-out]">
-            <DashboardContent tab={activeTab} />
+            <DashboardContent tab={activeTab} role={user.role} />
           </div>
         </div>
 
@@ -222,7 +222,7 @@ export default function DashboardPage() {
   );
 }
 
-function DashboardContent({ tab }: { tab: Tab }) {
+function DashboardContent({ tab, role }: { tab: Tab; role: User["role"] }) {
   switch (tab) {
     case "merge":
       return <MergeTool />;
@@ -237,11 +237,11 @@ function DashboardContent({ tab }: { tab: Tab }) {
     case "edit":
       return <EditOverlayTool />;
     case "admin":
-      return <AdminPanel />;
+      return <AdminPanel readOnly={role !== "admin"} />;
   }
 }
 
-function AdminPanel() {
+function AdminPanel({ readOnly }: { readOnly: boolean }) {
   const [subTab, setSubTab] = useState<"users" | "audit">("users");
   return (
     <div>
@@ -267,7 +267,7 @@ function AdminPanel() {
           <ShieldAlert size={16} /> Audit Logs
         </button>
       </div>
-      {subTab === "users" ? <UserManagement /> : <AuditTable />}
+      {subTab === "users" ? <UserManagement readOnly={readOnly} /> : <AuditTable />}
     </div>
   );
 }

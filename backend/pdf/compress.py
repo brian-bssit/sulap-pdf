@@ -13,6 +13,8 @@ from db.database import get_db
 from auth.dependencies import get_current_user
 from audit import log_audit
 from pdf.dl_headers import attachment_filename
+from pdf.errors import raise_if_encrypted
+from pdf.upload import save_upload
 
 logger = logging.getLogger("cloudpdf")
 
@@ -49,11 +51,10 @@ async def compress_pdf(
     input_size = 0
 
     try:
-        content = await file.read()
-        input_path.write_bytes(content)
-        del content
+        await save_upload(file, input_path, settings.max_file_size_mb * 1024 * 1024)
 
         input_size = _validate_pdf(str(input_path), settings.max_file_size_mb)
+        await raise_if_encrypted(input_path)
 
         if await request.is_disconnected():
             await _audit(db, request, user, file, input_size, 0, "CANCELLED_BY_CLIENT")

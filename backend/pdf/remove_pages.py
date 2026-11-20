@@ -15,6 +15,8 @@ from db.database import get_db
 from auth.dependencies import get_current_user
 from audit import log_audit
 from pdf.dl_headers import attachment_filename
+from pdf.errors import raise_if_encrypted
+from pdf.upload import save_upload
 
 logger = logging.getLogger("cloudpdf")
 
@@ -46,17 +48,12 @@ async def remove_pages(
         if not isinstance(remove, list) or not all(isinstance(i, int) and not isinstance(i, bool) for i in remove):
             raise HTTPException(status_code=400, detail="pages_to_remove harus array integer")
 
-        content = await file.read()
-        input_path.write_bytes(content)
-        del content
-
-        input_size = input_path.stat().st_size
-        if input_size > settings.max_file_size_mb * 1024 * 1024:
-            raise HTTPException(status_code=413, detail=f"File terlalu besar. Maks {settings.max_file_size_mb}MB")
+        input_size = await save_upload(file, input_path, settings.max_file_size_mb * 1024 * 1024)
 
         with open(input_path, "rb") as f:
             if f.read(4) != PDF_MAGIC:
                 raise HTTPException(status_code=400, detail="Format file tidak didukung")
+        await raise_if_encrypted(input_path)
 
         if await request.is_disconnected():
             await _audit_fast(db, request, user, file, input_size, 0, "CANCELLED_BY_CLIENT")

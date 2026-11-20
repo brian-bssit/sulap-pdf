@@ -90,6 +90,11 @@ Internal document processing toolkit for Bank Sahabat Sampoerna. Stateless, zero
 - **Batas domain login** — hanya email dengan domain di `ALLOWED_EMAIL_DOMAINS` + `email_verified`; selain itu 403, tercatat `GOOGLE_LOGIN FAILED`
 - **Single-origin CORS** — only `FRONTEND_URL` is allowlisted (`allow_origins` + `allow_credentials`)
 - **Role gating** — `/api/admin/*` requires `role == "admin"` (`get_current_admin_user`)
+- **Header keamanan** — CSP (self + Google Identity), nosniff, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy, HSTS bila HTTPS
+- **Upload streaming** — dibatasi per byte (413) tanpa memuat file ke RAM; `Content-Length` berlebih ditolak sebelum body dibaca
+- **Kuota per user** — dihitung dari `audit_logs` (aman multi-instance)
+- **PDF berpassword** — 422 dengan pesan jelas
+- **Convert Office** — makro dimatikan, link eksternal tak di-update, CPU/ukuran file dibatasi, process group dibunuh saat timeout
 - **Origin check** — `OriginCheckMiddleware` menolak request lintas-origin (`Origin`/`Referer` ≠ `FRONTEND_URL`); CSRF defense di sisi API
 - **Dev-login gerbang eksplisit** — `/api/auth/dev/login` aktif HANYA jika `ENVIRONMENT != production` **dan** `DEV_LOGIN_ENABLED=true`; tak pernah disimpulkan dari keberadaan OAuth
 - **Fail-fast secret** — `ENVIRONMENT=production` + `SECRET_KEY` default/kosong → start gagal (JWT ditandatangani key publik = forge token admin)
@@ -110,7 +115,7 @@ Internal document processing toolkit for Bank Sahabat Sampoerna. Stateless, zero
 | **PDF Edit Overlay** | pikepdf 8 | MPL 2.0 |
 | **PDF Compress** | qpdf (CLI) | Apache 2.0 |
 | **Document Convert** | LibreOffice headless | MPL 2.0 |
-| **Auth** | Authlib 1.3, python-jose 3.3, google-auth 2.35 | BSD / MIT / Apache 2.0 |
+| **Auth** | Authlib 1.3, PyJWT 2, google-auth 2.35 | BSD / MIT / Apache 2.0 |
 | **Infra** | Cloud Run, Cloud SQL, Cloud Build, Artifact Registry, Secret Manager | GCP |
 
 ### License compliance (NFR-LIC)
@@ -133,7 +138,9 @@ pdf-super/
 │   ├── main.py                 # FastAPI app, lifespan, CORS, static serve
 │   ├── config.py               # Pydantic Settings (env vars)
 │   ├── router.py               # API router aggregator
-│   ├── requirements.txt        # Python dependencies
+│   ├── requirements.txt        # Dependency langsung (diedit manual)
+│   ├── requirements.lock       # Terkunci + hash (pip-compile --generate-hashes); dipakai Dockerfile
+│   ├── alembic.ini, alembic/   # Migrasi skema (versions/0001 baseline, 0002 audit detail + indeks kuota)
 │   ├── tests/                  # Unit tests tanpa DB/auth (incl. test_convert_cmd.py — regression gate argv soffice)
 │   ├── audit.py                # Audit log helper
 │   ├── auth/
@@ -266,7 +273,7 @@ All endpoints prefixed with `/api`. Mutating endpoints require valid JWT cookie.
 | `id` | BIGINT (PK) | Auto-increment |
 | `user_id` | UUID NULL | FK to users |
 | `user_email` | VARCHAR(255) | Denormalized for fast queries |
-| `action` | VARCHAR(50) | COMPRESS, MERGE, REARRANGE, CONVERT, EDIT_OVERLAY, GOOGLE_LOGIN |
+| `action` | VARCHAR(50) | COMPRESS, MERGE, REARRANGE, REMOVE_PAGES, CONVERT, EDIT_OVERLAY, GOOGLE_LOGIN, RATE_LIMITED |
 | `source_files` | TEXT[] | Original filenames |
 | `result_file` | VARCHAR(255) | Output filename |
 | `file_sizes` | BIGINT[] | Input file sizes in bytes |
@@ -300,6 +307,8 @@ All config via environment variables (`.env` or Secret Manager).
 | `MAX_PAGES_REARRANGE` | No | `200` | Page limit for rearrange |
 | `MAX_PAGES_EDIT` | No | `200` | Page limit for edit-overlay |
 | `JWT_EXPIRY_HOURS` | No | `8` | Cookie/session duration |
+| `RATE_LIMIT_PER_MIN` | No | `10` | Operasi per user per menit (0 = nonaktif); lebih → 429 + `Retry-After` |
+| `QUOTA_PER_DAY` | No | `200` | Operasi per user per hari (0 = nonaktif) |
 | `ALLOWED_EMAIL_DOMAINS` | Prod: Yes | `""` | Domain email yang boleh login (koma). Kosong + `ENVIRONMENT=production` → start gagal |
 | `CLEANUP_INTERVAL_SECONDS` | No | `300` | Orphan file cleanup interval |
 | `ORPHAN_AGE_SECONDS` | No | `900` | File age before cleanup |
@@ -331,6 +340,7 @@ cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env  # edit DATABASE_URL, SECRET_KEY, GOOGLE_CLIENT_ID
+alembic upgrade head           # buat/upgrade skema (wajib sebelum start pertama)
 uvicorn main:app --port 8080   # --reload opsional utk dev; jangan utk prod
 
 # Frontend (build static, then serve from backend — single origin)
@@ -442,9 +452,9 @@ LibreOffice headless memakai profil user di `~/.config`; konversi paralel bisa d
   console authorize exactly **one origin** (`FRONTEND_URL`). Access the app only via
   the canonical service URL (`gcloud run services describe sulap --format='value(status.url)'`),
   not the legacy `<service>-<project-number>...run.app` alias.
-- **First deploy never auto-created tables** — `Base.metadata.create_all` runs once at
-  startup and is non-fatal; if the DB was down at boot, tables are missing. Restart the
-  revision after the DB is `RUNNABLE`, or create tables manually.
+- **Revisi baru gagal start / deploy merah** — container menjalankan `alembic upgrade head` sebelum
+  uvicorn; DB tak terjangkau (mis. Cloud SQL `STOPPED`) → start gagal, revisi lama tetap melayani.
+  Pastikan DB `RUNNABLE`, lalu deploy ulang. Lihat `infra/harden.md` §3.
 
 ## License
 

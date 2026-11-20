@@ -3,7 +3,7 @@ import io
 import uuid
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,7 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db.database import get_db
 from db.models import User
 from db.queries import get_audit_logs
-from auth.dependencies import get_current_admin_user
+from auth.dependencies import get_current_admin_user, get_current_auditor_or_admin
+from audit import log_audit
 
 router = APIRouter()
 
@@ -34,7 +35,7 @@ def _uuid_or_none_400(user_id: str | None) -> uuid.UUID | None:
 @router.get("/users")
 async def list_users(
     db: AsyncSession = Depends(get_db),
-    admin=Depends(get_current_admin_user),
+    viewer=Depends(get_current_auditor_or_admin),
     page: int = Query(1, ge=1),
     per_page: int = Query(200, ge=1, le=500),
 ):
@@ -63,18 +64,23 @@ async def list_users(
 
 @router.post("/users/{user_id}/upgrade")
 async def upgrade_user_role(
+    request: Request,
     user_id: str,
-    role: str = Query(..., regex="^(admin|user)$"),
+    role: str = Query(..., pattern="^(admin|auditor|user)$"),
     db: AsyncSession = Depends(get_db),
     admin=Depends(get_current_admin_user),
 ):
-    """Upgrade/downgrade user role. Admin only."""
+    """Ubah role user (admin | auditor | user). Admin only; tercatat di audit log."""
     uid = _uuid_or_400(user_id)
     user = (await db.execute(select(User).where(User.id == uid))).scalar_one_or_none()
     if user is None:
         raise HTTPException(status_code=404, detail="User tidak ditemukan")
 
-    if role == "user" and user.role == "admin":
+    old_role = user.role
+    if old_role == role:
+        return {"status": "ok", "user_id": user_id, "role": role}
+
+    if old_role == "admin":
         admin_count = (
             await db.execute(
                 select(func.count()).select_from(User).where(
@@ -87,8 +93,13 @@ async def upgrade_user_role(
                 status_code=400, detail="Tidak bisa menurunkan admin terakhir yang aktif"
             )
 
+    target_email = user.email
     await db.execute(update(User).where(User.id == uid).values(role=role))
     await db.commit()
+    await log_audit(
+        db, request, str(admin.id), admin.email, "USER_ROLE_CHANGE",
+        detail={"target_id": user_id, "target_email": target_email, "from": old_role, "to": role},
+    )
     return {"status": "ok", "user_id": user_id, "role": role}
 
 
@@ -106,7 +117,7 @@ async def list_audit_logs(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    user=Depends(get_current_admin_user),
+    user=Depends(get_current_auditor_or_admin),
 ):
     """Paginated audit log list with filters."""
     uid = _uuid_or_none_400(user_id)
@@ -145,7 +156,7 @@ async def export_audit_logs_csv(
     date_from: str | None = Query(None),
     date_to: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
-    user=Depends(get_current_admin_user),
+    user=Depends(get_current_auditor_or_admin),
 ):
     """Export audit logs as CSV."""
     uid = _uuid_or_none_400(user_id)
@@ -205,6 +216,7 @@ def _row_to_dict(r):
         "error_message": r.error_message,
         "ip_address": str(r.ip_address) if r.ip_address else None,
         "user_agent": r.user_agent,
+        "detail": r.detail,
         "executed_at": r.executed_at.isoformat() if r.executed_at else None,
     }
 

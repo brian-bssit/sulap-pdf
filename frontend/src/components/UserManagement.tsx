@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Shield, User } from "lucide-react";
 import api from "@/lib/api";
+import { errorDetail } from "@/lib/error";
 
 interface UserRow {
   id: string;
@@ -14,9 +15,12 @@ interface UserRow {
   created_at: string | null;
 }
 
-export default function UserManagement() {
+const ROLE_LABEL: Record<string, string> = { user: "User", auditor: "Auditor", admin: "Admin" };
+
+export default function UserManagement({ readOnly = false }: { readOnly?: boolean }) {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     try {
@@ -32,11 +36,12 @@ export default function UserManagement() {
   useEffect(() => { fetchUsers(); }, []);
 
   const handleUpgrade = async (userId: string, newRole: string) => {
+    setError(null);
     try {
       await api.post(`/api/admin/users/${userId}/upgrade?role=${newRole}`);
       setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u)));
-    } catch {
-      // silently fail
+    } catch (e) {
+      setError(errorDetail(e) ?? "Gagal mengubah role");
     }
   };
 
@@ -52,7 +57,10 @@ export default function UserManagement() {
     <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
       <div className="px-6 py-5 border-b border-slate-100">
         <h2 className="text-lg font-bold text-slate-800">User Management</h2>
-        <p className="text-xs text-slate-500">Kelola role user. User baru otomatis terdaftar sebagai regular user.</p>
+        <p className="text-xs text-slate-500">
+          {readOnly ? "Daftar user (hanya baca)." : "Kelola role user. User baru otomatis terdaftar sebagai regular user."}
+        </p>
+        {error && <p role="alert" className="mt-2 text-xs font-medium text-red-700">{error}</p>}
       </div>
 
       <div className="overflow-x-auto">
@@ -63,7 +71,7 @@ export default function UserManagement() {
               <th className="px-6 py-3 font-semibold">Email</th>
               <th className="px-6 py-3 font-semibold">Role</th>
               <th className="px-6 py-3 font-semibold">Last Login</th>
-              <th className="px-6 py-3 font-semibold text-right">Action</th>
+              {!readOnly && <th className="px-6 py-3 font-semibold text-right">Action</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -83,6 +91,8 @@ export default function UserManagement() {
                     className={`inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold rounded-lg ${
                       u.role === "admin"
                         ? "bg-purple-100 text-purple-700"
+                        : u.role === "auditor"
+                        ? "bg-amber-100 text-amber-800"
                         : "bg-slate-100 text-slate-600"
                     }`}
                   >
@@ -93,23 +103,20 @@ export default function UserManagement() {
                 <td className="px-6 py-3.5 text-xs text-slate-500">
                   {u.last_login_at ? new Date(u.last_login_at).toLocaleDateString("id-ID") : "-"}
                 </td>
-                <td className="px-6 py-3.5 text-right">
-                  {u.role === "user" ? (
-                    <button
-                      onClick={() => handleUpgrade(u.id, "admin")}
-                      className="text-xs font-medium text-purple-600 hover:text-purple-700 bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-lg transition-colors"
+                {!readOnly && (
+                  <td className="px-6 py-3.5 text-right">
+                    <select
+                      aria-label={`Role untuk ${u.email}`}
+                      value={u.role}
+                      onChange={(e) => handleUpgrade(u.id, e.target.value)}
+                      className="text-xs font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2 py-1.5 rounded-lg"
                     >
-                      Upgrade ke Admin
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleUpgrade(u.id, "user")}
-                      className="text-xs font-medium text-slate-500 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-lg transition-colors"
-                    >
-                      Downgrade
-                    </button>
-                  )}
-                </td>
+                      {Object.entries(ROLE_LABEL).map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

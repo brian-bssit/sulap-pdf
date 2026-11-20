@@ -13,8 +13,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends --no-install-su
     libreoffice-core libreoffice-writer libreoffice-calc libreoffice-impress libreoffice-draw \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY backend/requirements.lock .
+RUN pip install --no-cache-dir --require-hashes -r requirements.lock
 COPY backend/ .
 COPY --from=frontend /app/out/ ./static/
 # Jangan jalan sebagai root. PDF tools (qpdf/soffice) dipicu subprocess — privilege
@@ -27,4 +27,5 @@ USER app
 EXPOSE 8080
 HEALTHCHECK --interval=5s --timeout=3s --retries=3 \
   CMD curl -f http://localhost:${PORT:-8080}/api/health || exit 1
-CMD exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}
+# Migrasi skema (Alembic) dulu; gagal → container tak start → revisi lama tetap melayani.
+CMD alembic upgrade head && exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}

@@ -39,3 +39,11 @@ async def get_current_admin_user(request: Request, db: AsyncSession = Depends(ge
     if user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     return user
+
+
+async def get_current_auditor_or_admin(request: Request, db: AsyncSession = Depends(get_db)) -> User:
+    """Akses baca audit log & daftar user: auditor (read-only) atau admin."""
+    user = await get_current_user(request, db)
+    if user.role not in ("admin", "auditor"):
+        raise HTTPException(status_code=403, detail="Akses auditor atau admin diperlukan")
+    return user

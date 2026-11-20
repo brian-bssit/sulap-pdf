@@ -29,7 +29,8 @@ Lisensi langsung (top-level, dari `backend/requirements.txt`):
 | asyncpg | Apache-2.0 |
 | pydantic / pydantic-settings / pydantic-core | MIT |
 | Authlib | BSD-3-Clause |
-| python-jose | MIT |
+| PyJWT | MIT |
+| Alembic (+ Mako, MarkupSafe) | MIT / BSD-3-Clause |
 | pypdf | BSD-3-Clause |
 | python-multipart | Apache-2.0 |
 | httpx, httpcore | BSD-3-Clause |
@@ -37,7 +38,7 @@ Lisensi langsung (top-level, dari `backend/requirements.txt`):
 | requests | Apache-2.0 |
 | **pikepdf** | **MPL-2.0** |
 
-Sebaran lisensi seluruh 48: mayoritas MIT/BSD/Apache-2.0; MPL-2.0: `certifi`, `pikepdf`;
+Sebaran lisensi seluruh 49: mayoritas MIT/BSD/Apache-2.0; MPL-2.0: `certifi`, `pikepdf`;
 PSF/greenlet etc lihat index.json. Tidak ada AGPL/GPL di closure Python.
 
 ### 1.2 npm / frontend (30 komponen ter-install)

@@ -25,17 +25,17 @@ Dipanggil di `google_token_login` dan `google_callback` sebelum `create_user`. C
 ```python
 async def enforce_quota(request, db, user=Depends(get_current_user)) -> None
 ```
-Dua `COUNT(*)` atas `audit_logs` (`user_id`, `executed_at >= now-60s` / `now-1d`, `action != 'GOOGLE_LOGIN'`, `status != 'FAILED'`? — hitung semua kecuali login). Index komposit `(user_id, executed_at)` (migrasi). 429 + `Retry-After`. Dipasang sebagai dependency di router pdf.
+Dua query atas `audit_logs` (`user_id`, `executed_at >= now()-jendela`, `action NOT IN ('GOOGLE_LOGIN','RATE_LIMITED')`; operasi FAILED ikut dihitung). Penolakan dicatat sebagai action `RATE_LIMITED` yang tidak dihitung, jadi penolakan tidak memperpanjang kuncian. Waktu dihitung di DB (`now()`). Index komposit `(user_id, executed_at)` (migrasi). 429 + `Retry-After`. Dipasang sebagai dependency di router pdf.
 
 ### R6 `pdf/upload.py` (baru)
 ```python
 async def save_upload(file: UploadFile, dest: Path, max_bytes: int) -> int  # baca 1 MiB per chunk, raise 413 bila > max_bytes
 ```
-Endpoint lama (`compress`, `merge`, `rearrange`, `remove_pages`, `convert`, `edit_overlay`) mengganti `await file.read()` dengan helper ini. `BodyLimitMiddleware` menolak `Content-Length` > `max_file_size_mb * 10 + 1MiB` (batas merge terbesar).
+Endpoint lama (`compress`, `merge`, `rearrange`, `remove_pages`, `convert`, `edit_overlay`) mengganti `await file.read()` dengan helper ini. `BodyLimitMiddleware` menolak `Content-Length` > `(max_file_size_mb + 1)` MiB (merge dibatasi agregat 30 MB + overhead multipart; sisa anggaran per file diteruskan ke `save_upload`).
 
 ### R7 `pdf/convert.py`
 - Seed profil: tulis `registrymodifications.xcu` ke `{profil}/user/` sebelum jalan: `MacroSecurityLevel=3` (very high), `DisableMacrosExecution=true`, `UpdateLinkMode` (Writer/Calc/Impress)=never.
-- Subprocess: `start_new_session=True`, `preexec_fn` set `RLIMIT_CPU`(120s), `RLIMIT_AS`(3 GiB), `RLIMIT_FSIZE`(200 MiB); timeout → `os.killpg`.
+- Subprocess: `start_new_session=True`, `preexec_fn` set `RLIMIT_CPU`(= `request_timeout_seconds`) dan `RLIMIT_FSIZE`(200 MiB); `RLIMIT_AS` sengaja tidak dipasang (LibreOffice crash bila memori virtual dibatasi; memori dibatasi cgroup Cloud Run). Timeout → `os.killpg`; pipe dikuras via `communicate()`.
 - Infra (manual): Direct VPC egress + firewall deny-all untuk service; `infra/harden.md` berisi perintah.
 - Test: argv tetap lolos `tests/test_convert_cmd.py`; tambah test yang membaca xcu hasil seed.
 
@@ -53,16 +53,20 @@ Endpoint lama (`compress`, `merge`, `rearrange`, `remove_pages`, `convert`, `edi
 `exp = now(UTC) + timedelta(hours=settings.jwt_expiry_hours)`; cookie `max_age` ikut. Hapus `jwt_expiry_days`.
 
 ### R12 Alembic
-Direktori `backend/alembic/` (BUKAN `migrations/`). `env.py` memakai `settings.database_url` (async via `run_sync`). Revisi 0001 = baseline (skema saat ini, idempoten), 0002 = `audit_logs.detail` + index kuota. Hapus `create_all` dari `lifespan`. Cloud Build: step sebelum deploy `alembic upgrade head` memakai Cloud SQL connector — langkah ini butuh `cloudbuild.yaml` + akses DB dari Cloud Build; fallback: jalankan saat container start sebagai `alembic upgrade head && uvicorn` (single instance race kecil, advisory lock di env.py).
+Direktori `backend/alembic/` (BUKAN `migrations/`). `env.py` memakai `settings.database_url` (async via `run_sync`). Revisi 0001 = baseline (skema saat ini, idempoten), 0002 = `audit_logs.detail` + index kuota. Hapus `create_all` dari `lifespan`. Dijalankan saat container start: `CMD alembic upgrade head && exec uvicorn ...` (Dockerfile); instance paralel diserialkan `pg_advisory_xact_lock` di env.py. Baseline 0001 idempoten (lewati tabel yang sudah ada, DB produksi dari `create_all`); 0002 memakai `IF NOT EXISTS`. Role `auditor` tetap boleh memakai tool PDF.
 
 ### R13
-`jose.jwt` → `import jwt` (PyJWT): `jwt.encode`, `jwt.decode(..., algorithms=["HS256"])`, tangkap `jwt.PyJWTError`. `requirements.in` (tanpa hash) → `requirements.lock` via `pip-compile --generate-hashes`; Dockerfile `pip install --require-hashes -r requirements.lock`. `datetime.utcnow` → `datetime.now(timezone.utc)` di `jwt.py` & `models.py` default (`lambda`).
+`jose.jwt` → `import jwt` (PyJWT): `jwt.encode`, `jwt.decode(..., algorithms=["HS256"])`, tangkap `jwt.PyJWTError`. `requirements.txt` (input, tetap dipakai SBOM/CI dev) → `requirements.lock` via `pip-compile --generate-hashes --strip-extras`; Dockerfile `pip install --require-hashes -r requirements.lock`. `datetime.utcnow` → `datetime.now(timezone.utc)` di `jwt.py` & `models.py` default (`lambda`).
 
 ### R2 CI `.github/workflows/ci.yml` (jalur diblokir hook → ditulis ke `.claude/queue` sebagai usulan manusia, lalu dipasang manual)
 Job `backend` (python 3.12, install lock, `apt install qpdf`, pytest), `frontend` (node 22, `npm ci`, lint, `tsc`, build), `audit` (pip-audit, npm audit). Tanpa deploy; deploy tetap Cloud Build trigger.
 
 ### R3 `infra/setup.sh`
 `--activation-policy ALWAYS --backup-start-time 18:00 --enable-point-in-time-recovery --retained-backups-count 14`. Plus perintah `patch` untuk instance existing di komentar.
+
+## Perbaikan yang ikut (ditemukan saat implementasi)
+- `audit.py`: `X-Forwarded-For` non-IP (dipalsukan klien) membuat INSERT kolom INET gagal dan meracuni session request → 500. Kini divalidasi, disimpan NULL bila bukan IP.
+- `db/models.py`: default `executed_at`/`created_at` memakai `datetime.now(timezone.utc)` (sebelumnya `utcnow` naif, bergantung timezone DB; kuota butuh konsistensi).
 
 ## Data Models
 ```sql

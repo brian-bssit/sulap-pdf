@@ -13,22 +13,14 @@ from config import settings
 from db.database import get_db
 from auth.dependencies import get_current_user
 from audit import log_audit
+from pdf.errors import raise_if_encrypted
+from pdf.upload import save_upload
 
 logger = logging.getLogger("cloudpdf")
 
 router = APIRouter()
 
 PDF_MAGIC = b"%PDF"
-
-
-async def _read_and_validate(file: UploadFile, max_size_mb: int) -> tuple[bytes, str, int]:
-    """Read file content, validate PDF header, return (content, filename, size)."""
-    content = await file.read()
-    if len(content) < 4 or content[:4] != PDF_MAGIC:
-        raise HTTPException(status_code=400, detail=f"Format tidak didukung: {file.filename}")
-    if len(content) > max_size_mb * 1024 * 1024:
-        raise HTTPException(status_code=413, detail=f"File terlalu besar ({file.filename}). Maks {max_size_mb}MB")
-    return content, (file.filename or "unknown"), len(content)
 
 
 def _merge_on_disk(tmp_paths: list[Path], output_path: Path) -> None:
@@ -62,30 +54,29 @@ async def merge_pdfs(
     total_input = 0
 
     try:
-        # Read all files to memory (30MB total limit across files)
-        file_data: list[bytes] = []
-        for upload_file in files:
+        # Stream tiap file ke disk; sisa anggaran = batas total (30MB) dikurangi yang sudah masuk.
+        limit = settings.max_file_size_mb * 1024 * 1024
+        tmp_paths: list[Path] = []
+        for i, upload_file in enumerate(files):
             if await request.is_disconnected():
                 await _audit(db, request, user, source_names, source_sizes, 0, "CANCELLED_BY_CLIENT")
                 return StreamingResponse(iter([]), status_code=499)
 
-            content, name, size = await _read_and_validate(upload_file, settings.max_file_size_mb)
-            file_data.append(content)
+            name = upload_file.filename or "unknown"
+            tmp_path = Path(f"/tmp/cpdf_{job_id}_p{i}.pdf")
+            tmp_files.append(tmp_path)
+            tmp_paths.append(tmp_path)
+            size = await save_upload(
+                upload_file, tmp_path, limit - total_input,
+                detail=f"Total file > {settings.max_file_size_mb}MB",
+            )
+            with open(tmp_path, "rb") as f:
+                if f.read(4) != PDF_MAGIC:
+                    raise HTTPException(status_code=400, detail=f"Format tidak didukung: {name}")
+            await raise_if_encrypted(tmp_path)
             source_names.append(name)
             source_sizes.append(size)
             total_input += size
-
-        if total_input > settings.max_file_size_mb * 1024 * 1024:
-            raise HTTPException(status_code=413, detail=f"Total file > {settings.max_file_size_mb}MB")
-
-        # Tulis semua file ke disk (read loop async), lalu parse+copy pypdf di
-        # threadpool — writer/reader tak menyentuh event loop.
-        tmp_paths: list[Path] = []
-        for i, data in enumerate(file_data):
-            tmp_path = Path(f"/tmp/cpdf_{job_id}_p{i}.pdf")
-            tmp_path.write_bytes(data)
-            tmp_files.append(tmp_path)
-            tmp_paths.append(tmp_path)
 
         output_path = Path(f"/tmp/cpdf_{job_id}_merged.pdf")
         tmp_files.append(output_path)
