@@ -79,9 +79,9 @@ Internal document processing toolkit for Bank Sahabat Sampoerna. Stateless, zero
 | | |
 |:---|:---|
 | **Audit Logs** | Table view, server-side search (email/aksi, wildcard di-escape) + filters: user, action, status, date range; paginated |
-| **User Management** | View registered users (paginated `{data,total}`), promote/demote admin role |
+| **User Management** | View registered users (paginated `{data,total}`), ubah role (`user` / `auditor` / `admin`); perubahan tercatat `USER_ROLE_CHANGE` |
 | **Export** | CSV download mengikuti filter + search aktif (BOM UTF-8 utk Excel) |
-| **Access** | Admin role only (`user.role == "admin"`), role-gated in sidebar |
+| **Access** | `admin`: penuh. `auditor`: baca audit log, CSV, dan daftar user (read-only), tetap boleh memakai tool PDF. `user`: tanpa akses panel |
 
 ### Security & Compliance
 - **Google OAuth** — GIS popup flow (client_id only, no client_secret needed)
@@ -89,7 +89,7 @@ Internal document processing toolkit for Bank Sahabat Sampoerna. Stateless, zero
 - **JWT cookie** — `SameSite=Strict`, `HttpOnly`, 8-hour expiry, configurable (`Secure` when served over HTTPS)
 - **Batas domain login** — hanya email dengan domain di `ALLOWED_EMAIL_DOMAINS` + `email_verified`; selain itu 403, tercatat `GOOGLE_LOGIN FAILED`
 - **Single-origin CORS** — only `FRONTEND_URL` is allowlisted (`allow_origins` + `allow_credentials`)
-- **Role gating** — `/api/admin/*` requires `role == "admin"` (`get_current_admin_user`)
+- **Role gating** — `GET /api/admin/*` untuk `admin` atau `auditor`; `POST /api/admin/users/{id}/upgrade` hanya `admin`. Role dibaca dari DB tiap request → demote/nonaktif berlaku seketika
 - **Header keamanan** — CSP (self + Google Identity), nosniff, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy, HSTS bila HTTPS
 - **Upload streaming** — dibatasi per byte (413) tanpa memuat file ke RAM; `Content-Length` berlebih ditolak sebelum body dibaca
 - **Kuota per user** — dihitung dari `audit_logs` (aman multi-instance)
@@ -236,7 +236,7 @@ All endpoints prefixed with `/api`. Mutating endpoints require valid JWT cookie.
 | `GET` | `/api/admin/audit-logs` | Admin JWT | Paginated logs; filter `user_id/action/status/search/date_from/date_to` |
 | `GET` | `/api/admin/audit-logs/csv` | Admin JWT | Export logs mengikuti filter + `search` (≤10k baris, BOM) |
 | `GET` | `/api/admin/users` | Admin JWT | User list paginated (`page`/`per_page`) → `{data,total}` |
-| `POST` | `/api/admin/users/{id}/upgrade?role=admin\|user` | Admin JWT | Promote/demote user role |
+| `POST` | `/api/admin/users/{id}/upgrade?role=admin\|auditor\|user` | Admin JWT | Promote/demote user role |
 
 ### Error Responses
 
@@ -244,7 +244,8 @@ All endpoints prefixed with `/api`. Mutating endpoints require valid JWT cookie.
 |:---|:---|
 | `400` | Invalid input (bad format, empty file, wrong file type) |
 | `401` | Missing or expired JWT |
-| `403` | Insufficient role (non-admin hitting admin endpoints) |
+| `403` | Insufficient role, atau domain email tidak diizinkan saat login |
+| `429` | Kuota/rate limit per user terlampaui (`Retry-After` dalam detik) |
 | `413` | File exceeds 30 MB limit |
 | `422` | Processing failed (corrupt file, LibreOffice/qpdf error) |
 | `499` | Client disconnected — process aborted |
@@ -373,7 +374,7 @@ Auto-create/login user dengan email & role tsb. Jangan nyalakan di production.
 
 ## Deployment
 
-**`git push origin main` adalah SATU-SATUNYA jalur deploy.** Push memicu Cloud Build GitHub
+**Merge ke `main` (lewat PR dengan CI hijau) adalah SATU-SATUNYA jalur deploy.** Push ke `main` memicu Cloud Build GitHub
 trigger **`sulap-deploy`** → `cloudbuild.yaml`:
 
 ```
@@ -381,6 +382,8 @@ Docker build → push to Artifact Registry → gcloud run deploy sulap
 ```
 
 Catatan operasional:
+- `main` dilindungi branch protection (PR + status check `backend`, `frontend`, `audit`; lihat `.claude/queue/ci-workflow.md`). Push langsung ke `main` tidak dipakai lagi.
+- Container menjalankan `alembic upgrade head` saat start (lihat `infra/harden.md`).
 - Trigger **2nd-gen → regional** (`asia-southeast2`). Inspeksi WAJIB pakai `--region`:
   `gcloud builds triggers list --project bss-sandbox-project-1 --region asia-southeast2`
   (list global tak menampilkan trigger regional). UUID di build history = **build ID**, bukan trigger.

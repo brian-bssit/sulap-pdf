@@ -29,5 +29,13 @@ Catatan guardrail: hook memblokir tulis ke `.github/workflows/` dan `migrations/
 - [x] **Checkpoint C** — pytest lulus, `docker build` sukses, `alembic upgrade head` di Postgres lokal (docker compose)
 
 ## Gelombang D — Penutup
-- [ ] D1 README: konfigurasi baru (env), role auditor, kuota, aturan deploy baru
-- [ ] D2 `@verifier` jalankan bukti penuh; catat hasil
+- [x] D1 README: konfigurasi baru (env), role auditor, kuota, aturan deploy baru
+- [x] D2 `@verifier` jalankan bukti penuh; catat hasil
+
+## Hasil verifikasi akhir (@verifier, 2026-11-20)
+- pytest backend: `66 passed`; `build_font_data.py --check`: OK
+- frontend: `lint` (warning lama saja), `tsc --noEmit`, `next build`: rc=0
+- Alembic di Postgres 16 bersih: upgrade 0001→0002 sukses, `alembic check` → "No new upgrade operations detected."
+- E2E pipeline (upload/kuota/header/convert): `19 pass, 0 fail`, tanpa sisa `/tmp/cpdf_*`
+- E2E role/audit di skema hasil Alembic: `18 pass, 0 fail`
+- Belum diuji: login Google korporat sungguhan, build Docker, deploy Cloud Run, perintah `infra/` terhadap GCP
