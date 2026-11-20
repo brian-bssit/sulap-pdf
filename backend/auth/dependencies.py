@@ -7,6 +7,7 @@ from auth.jwt import decode_token, get_token_from_cookie
 from db.database import get_db
 from db.models import User
 from db.queries import get_user_by_id
+from logging_setup import request_ctx
 
 
 async def get_current_user(request: Request, db: AsyncSession = Depends(get_db)) -> User:
@@ -31,6 +32,9 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
     if not user or not user.is_active:
         raise HTTPException(status_code=401, detail="User not found or inactive")
 
+    ctx = request_ctx.get()
+    if ctx is not None:
+        ctx["user_id"] = str(user.id)
     return user
 
 

@@ -28,4 +28,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=5s --timeout=3s --retries=3 \
   CMD curl -f http://localhost:${PORT:-8080}/api/health || exit 1
 # Migrasi skema (Alembic) dulu; gagal → container tak start → revisi lama tetap melayani.
-CMD alembic upgrade head && exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}
+CMD alembic upgrade head && exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080} --no-access-log

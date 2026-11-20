@@ -14,7 +14,8 @@ Frontend: strings.ts (kamus) + hooks/komponen kecil + Vitest/Playwright
 ### R5 Observabilitas
 - `middleware/request_context.py` (baru): `contextvars.ContextVar request_id`; baca `X-Request-ID` masuk bila ada, jika tidak `uuid4().hex[:12]`; set di respons.
 - `logging_setup.py` (baru): `JsonFormatter` (stdlib `logging`, `json.dumps`) memuat `severity` (kunci yang dipahami Cloud Logging), `message`, `request_id`, `user_id`, `tool`. Dipanggil di `lifespan` menggantikan `basicConfig`.
-- `middleware/origin.py`: tambah `GET /ready` di samping `/health` (jangan ubah `/health`).
+- `middleware/origin.py`: tambah `GET /ready` di samping `/health` (jangan ubah `/health`). Cek: DB `SELECT 1` (timeout 3 s), `qpdf`, `soffice`/`libreoffice`; `tesseract` ditambahkan bersama fitur OCR. Respons hanya boolean.
+- Holder konteks: `request_ctx` menyimpan dict mutable (bukan nilai) karena `BaseHTTPMiddleware` menjalankan app di task lain; `get_current_user` mengisi `user_id`, middleware paling luar membacanya untuk log akses. JSON hanya saat `ENVIRONMENT=production`; Dockerfile `--no-access-log`.
 - Metrik/alert: `docs/ops/monitoring.md` berisi definisi filter log + perintah `gcloud logging metrics create` / `alpha monitoring policies create` untuk dijalankan manusia.
 
 ### R6 Test

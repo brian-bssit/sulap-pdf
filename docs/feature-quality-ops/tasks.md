@@ -1,11 +1,11 @@
 # Tasks — Quality & Operations
 
 ## Gelombang A — Observabilitas & kebersihan
-- [ ] A1 `logging_setup.py` + `request_context.py` + pasang di `main.py` + test (JSON valid, request_id konsisten) [Req 5]
-- [ ] A2 `/api/ready` + test (DB mock gagal → 503) [Req 5]
-- [ ] A3 `docs/ops/monitoring.md` (metrik & alert, perintah gcloud untuk manusia) [Req 5]
-- [ ] A4 Satu nama produk; pindah/hapus `.claude/plan.md`, `prd-init.md` [Req 8]
-- [ ] **Checkpoint A** — pytest lulus
+- [x] A1 `logging_setup.py` + `request_context.py` + pasang di `main.py` + test (JSON valid, request_id konsisten) [Req 5]
+- [x] A2 `/api/ready` + test (DB mock gagal → 503) [Req 5]
+- [x] A3 `docs/ops/monitoring.md` (metrik & alert, perintah gcloud untuk manusia) [Req 5]
+- [x] A4 Satu nama produk; pindah/hapus `.claude/plan.md`, `prd-init.md` [Req 8]
+- [x] **Checkpoint A** — pytest lulus
 
 ## Gelombang B — Test
 - [ ] B1 `tools/make_fixtures.py` + fixture pytest (normal, korup, terenkripsi, 200 hlm, scan) [Req 6]

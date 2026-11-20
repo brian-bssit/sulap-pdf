@@ -157,7 +157,7 @@ async def dev_login(request: Request, db: AsyncSession = Depends(get_db)):
     if not settings.dev_login_enabled:
         raise HTTPException(status_code=404, detail="Not available")
 
-    dev_email = request.query_params.get("email", "dev@cloudpdf.local")
+    dev_email = request.query_params.get("email", "dev@sulap.local")
     dev_name = request.query_params.get("name", "Dev User")
     dev_role = request.query_params.get("role", "user")
     dev_sub = f"dev-{dev_email}"

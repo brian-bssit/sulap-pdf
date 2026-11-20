@@ -14,6 +14,8 @@ from middleware.error_handler import register_error_handlers
 from middleware.origin import OriginCheckMiddleware
 from middleware.body_limit import BodyLimitMiddleware
 from middleware.security_headers import SecurityHeadersMiddleware
+from middleware.request_context import RequestContextMiddleware
+from logging_setup import setup_logging
 
 logger = logging.getLogger("cloudpdf")
 
@@ -41,10 +43,7 @@ async def cleanup_orphaned_files():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logging.basicConfig(
-        level=getattr(logging, settings.log_level.upper()),
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-    )
+    setup_logging(settings.log_level, json_logs=settings.environment == "production")
     logger.info(f"Starting {settings.app_name}")
 
     # Start orphan cleanup
@@ -70,6 +69,8 @@ app.add_middleware(OriginCheckMiddleware, allowed_origin=settings.frontend_url)
 # Batas total = 30MB (agregat merge) + 1MiB overhead multipart. Paling luar → ditolak sebelum body dibaca.
 app.add_middleware(BodyLimitMiddleware, max_bytes=(settings.max_file_size_mb + 1) * 1024 * 1024)
 app.add_middleware(SecurityHeadersMiddleware, hsts=settings.frontend_url.startswith("https"))
+# Paling luar: request_id + log akses mencakup respons yang ditolak middleware lain (413/403).
+app.add_middleware(RequestContextMiddleware)
 
 register_error_handlers(app)
 

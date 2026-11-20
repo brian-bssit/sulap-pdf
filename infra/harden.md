@@ -22,14 +22,14 @@ Catatan: Cloud SQL via IP publik perlu diizinkan atau dipindah ke private IP / C
 Uji di lingkungan non-produksi dulu: login Google, upload, convert harus tetap jalan.
 
 ## 2. Salinan audit immutable (Cloud Logging → bucket terkunci)
-Aplikasi menulis tiap audit sebagai baris log `AUDIT {...json...}` (selain tabel `audit_logs`).
+Di production aplikasi menulis tiap audit sebagai baris log JSON `event="audit"` (selain tabel `audit_logs`).
 ```bash
 gcloud storage buckets create gs://PROJECT-sulap-audit --location REGION --uniform-bucket-level-access
 gcloud storage buckets update gs://PROJECT-sulap-audit --retention-period=<detik sesuai kebijakan retensi>
 # Kunci retensi HANYA setelah nilai disetujui (tidak bisa dibatalkan):
 # gcloud storage buckets update gs://PROJECT-sulap-audit --lock-retention-period
 gcloud logging sinks create sulap-audit-sink storage.googleapis.com/PROJECT-sulap-audit \
-  --log-filter='resource.type="cloud_run_revision" AND resource.labels.service_name="sulap" AND textPayload:"AUDIT {"'
+  --log-filter='resource.type="cloud_run_revision" AND resource.labels.service_name="sulap" AND jsonPayload.event="audit"'
 # Beri service account sink hak objectCreator pada bucket (alamat ada di output perintah di atas).
 ```
 Retensi resmi belum ditetapkan (lihat docs/feature-quality-ops). Jangan kunci sebelum disetujui.

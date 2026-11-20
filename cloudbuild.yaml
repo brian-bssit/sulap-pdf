@@ -1,4 +1,4 @@
-# Cloud Build — SULAP (CloudPDF Toolkit)
+# Cloud Build — SULAP PDF
 # Docker build → Artifact Registry → Cloud Run deploy
 #
 # Secrets in Secret Manager:

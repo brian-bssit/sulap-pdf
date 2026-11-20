@@ -201,7 +201,9 @@ pdf-super/
 │   └── package.json
 │
 └── docs/
-    └── feature-*/              # Feature design documents (requirements, design, tasks)
+    ├── feature-*/              # Feature design documents (requirements, design, tasks)
+    ├── ops/                    # Monitoring, runbook (operasional)
+    └── archive/                # Dokumen historis (PRD awal)
 ```
 
 ---
@@ -299,7 +301,7 @@ All config via environment variables (`.env` or Secret Manager).
 | `GOOGLE_CLIENT_ID` | Yes | — | Google OAuth client ID (GIS) |
 | `GOOGLE_CLIENT_SECRET` | No | `""` | Only needed for redirect OAuth fallback |
 | `FRONTEND_URL` | Yes | `http://localhost:8080` | CORS origin + cookie domain |
-| `APP_NAME` | No | `CloudPDF Toolkit` | App display name |
+| `APP_NAME` | No | `SULAP PDF` | App display name |
 | `ENVIRONMENT` | No | `development` | `production` → fail-fast jika `SECRET_KEY` default/kosong |
 | `DEV_LOGIN_ENABLED` | No | `false` | Gerbang eksplisit `/api/auth/dev/login` — WAJIB `false` di prod |
 | `LOG_LEVEL` | No | `INFO` | Python logging level |

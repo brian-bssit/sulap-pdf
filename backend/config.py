@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
     # App
-    app_name: str = "CloudPDF Toolkit"
+    app_name: str = "SULAP PDF"
     log_level: str = "INFO"
     frontend_url: str = "http://localhost:8080"
     # environment ∈ {development, test, production} — menyalakan fail-fast secret

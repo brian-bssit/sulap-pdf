@@ -1,5 +1,4 @@
 import ipaddress
-import json
 import logging
 
 from fastapi import Request
@@ -39,11 +38,11 @@ async def log_audit(
         ua = request.headers.get("user-agent", "")
         # Salinan ke Cloud Logging (sink immutable), ditulis sebelum INSERT agar
         # tetap tercatat walau DB gagal.
-        logger.info("AUDIT " + json.dumps({
-            "user_email": user_email, "action": action, "status": status,
+        logger.info("audit", extra={"fields": {
+            "event": "audit", "user_email": user_email, "action": action, "status": status,
             "source_files": source_files, "result_size": result_size,
             "processing_ms": processing_ms, "ip": ip, "detail": detail,
-        }, default=str))
+        }})
         await insert_audit_log(
             db=db,
             user_id=user_id,
