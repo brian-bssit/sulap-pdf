@@ -202,7 +202,7 @@ pdf-super/
 │
 └── docs/
     ├── feature-*/              # Feature design documents (requirements, design, tasks)
-    ├── ops/                    # Monitoring, runbook (operasional)
+    ├── ops/                    # Monitoring, runbook, RACI, SLA, retensi audit, DPIA, DR
     └── archive/                # Dokumen historis (PRD awal)
 ```
 
@@ -470,6 +470,13 @@ LibreOffice headless memakai profil user di `~/.config`; konversi paralel bisa d
 - **Revisi baru gagal start / deploy merah** — container menjalankan `alembic upgrade head` sebelum
   uvicorn; DB tak terjangkau (mis. Cloud SQL `STOPPED`) → start gagal, revisi lama tetap melayani.
   Pastikan DB `RUNNABLE`, lalu deploy ulang. Lihat `infra/harden.md` §3.
+
+## Operasional
+
+Dokumen di [docs/ops/](docs/ops/): [runbook](docs/ops/runbook.md), [monitoring](docs/ops/monitoring.md),
+[SLA/SLO](docs/ops/sla.md), [retensi audit](docs/ops/retensi-audit.md), [DPIA ringkas](docs/ops/dpia-ringkas.md),
+[DR](docs/ops/dr.md), [RACI](docs/ops/raci.md). Nilai yang membutuhkan keputusan manajemen (pemilik, RTO/RPO resmi,
+retensi) ditandai **BELUM DITETAPKAN**.
 
 ## License
 

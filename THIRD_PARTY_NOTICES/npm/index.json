@@ -10,6 +10,26 @@
     "modifications": "none"
   },
   {
+    "name": "@napi-rs/canvas",
+    "version": "0.1.100",
+    "license": "MIT",
+    "source": null,
+    "license_files": [
+      "LICENSE"
+    ],
+    "modifications": "none"
+  },
+  {
+    "name": "@napi-rs/canvas-darwin-arm64",
+    "version": "0.1.100",
+    "license": "MIT",
+    "source": null,
+    "license_files": [
+      "LICENSE.txt (note)"
+    ],
+    "modifications": "none"
+  },
+  {
     "name": "@next/env",
     "version": "14.2.35",
     "license": "MIT",
@@ -61,7 +81,7 @@
   },
   {
     "name": "axios",
-    "version": "1.19.0",
+    "version": "1.21.1",
     "license": "MIT",
     "source": "https://axios-http.com",
     "license_files": [
@@ -101,7 +121,7 @@
   },
   {
     "name": "follow-redirects",
-    "version": "1.16.0",
+    "version": "1.16.3",
     "license": "MIT",
     "source": "https://github.com/follow-redirects/follow-redirects",
     "license_files": [
@@ -160,20 +180,10 @@
     "modifications": "none"
   },
   {
-    "name": "path2d-polyfill",
-    "version": "2.0.1",
-    "license": "MIT",
-    "source": "https://github.com/nilzona/path2d-polyfill#readme",
-    "license_files": [
-      "LICENSE"
-    ],
-    "modifications": "none"
-  },
-  {
     "name": "pdfjs-dist",
-    "version": "4.0.379",
+    "version": "4.10.38",
     "license": "Apache-2.0",
-    "source": "http://mozilla.github.io/pdf.js/",
+    "source": "https://mozilla.github.io/pdf.js/",
     "license_files": [
       "LICENSE"
     ],
@@ -491,7 +501,7 @@
   },
   {
     "name": "nanoid",
-    "version": "3.3.16",
+    "version": "3.3.20",
     "license": "MIT",
     "source": null,
     "license_files": [
@@ -511,7 +521,7 @@
   },
   {
     "name": "source-map-js",
-    "version": "1.2.1",
+    "version": "1.2.4",
     "license": "BSD-3-Clause",
     "source": "https://github.com/7rulnik/source-map-js",
     "license_files": [

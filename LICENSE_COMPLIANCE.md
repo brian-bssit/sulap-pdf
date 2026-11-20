@@ -50,7 +50,7 @@ Daftar lengkap: **`THIRD_PARTY_NOTICES/npm/index.json`**. Termasuk komponen buil
 | Next.js 14.2.35, React 18.3.1, react-dom, scheduler, styled-jsx, client-only | MIT |
 | axios 1.19.0 | MIT |
 | lucide-react | ISC |
-| pdfjs-dist 4.0.379 | Apache-2.0 |
+| pdfjs-dist 4.10.38 | Apache-2.0 |
 | path2d-polyfill | MIT |
 | @fontsource-variable/plus-jakarta-sans 5.3.0 (font UI, self-host) | OFL-1.1 (paket MIT-licensed wrapper; teks OFL di `THIRD_PARTY_NOTICES/_licenses/OFL-1.1.txt`) |
 | busboy, streamsearch | MIT (field `license` kosong di package.json; teks di berkas LICENSE) |
@@ -67,7 +67,7 @@ Daftar lengkap: **`THIRD_PARTY_NOTICES/npm/index.json`**. Termasuk komponen buil
 | curl | 7.88.1-10+deb12u5 | curl (MIT-style) | `system/curl.md` |
 
 ### 1.4 pdf.js worker
-pdfjs-dist 4.0.379, Apache-2.0, © Mozilla Foundation. → `pdfjs/index.json` + `pdfjs/LICENSE-Apache-2.0.txt`.
+pdfjs-dist 4.10.38, Apache-2.0, © Mozilla Foundation. → `pdfjs/index.json` + `pdfjs/LICENSE-Apache-2.0.txt`.
 
 ### 1.5 Fonts di-embed (Edit PDF)
 | Komponen | Versi | Lisensi | File |

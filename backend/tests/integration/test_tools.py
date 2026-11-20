@@ -206,3 +206,29 @@ def test_compress_tiny_pdf_returned_unchanged_when_not_smaller(client, pdf_norma
 def test_compress_invalid_level_400(client, pdf_normal):
     r = client.post("/api/pdf/compress", files={"file": ("a.pdf", pdf_normal)}, data={"level": "ultra"})
     assert r.status_code == 400 and "level" in r.json()["detail"]
+
+
+# ── pesan error tidak membocorkan detail teknis (path /tmp, stderr alat) ──
+@needs_qpdf
+def test_compress_error_has_no_internal_details(client, pdf_corrupt):
+    r = client.post("/api/pdf/compress", files={"file": ("a.pdf", pdf_corrupt)})
+    assert r.status_code == 422
+    d = r.json()["detail"]
+    assert "/tmp" not in d and "cpdf_" not in d and "qpdf" not in d.lower() and "WARNING" not in d
+
+
+def test_convert_error_has_no_internal_details(client, monkeypatch, caplog):
+    import sys
+
+    from pdf import convert
+
+    # Alat gagal dengan stderr berisi path internal → user tak boleh melihatnya; log boleh.
+    monkeypatch.setattr(
+        convert, "_build_convert_cmd",
+        lambda prof, inp: [sys.executable, "-c", "import sys; sys.stderr.write('Error: /tmp/cpdf_x_in.docx tidak terbaca'); sys.exit(1)"],
+    )
+    r = client.post("/api/pdf/convert", files={"file": ("a.docx", b"x", "application/octet-stream")})
+    assert r.status_code == 422
+    d = r.json()["detail"]
+    assert "/tmp" not in d and "cpdf_" not in d and "Error" not in d
+    assert any("/tmp/cpdf_x_in.docx" in rec.getMessage() for rec in caplog.records)  # detail teknis ada di log

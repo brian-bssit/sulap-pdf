@@ -42,6 +42,27 @@
     },
     {
       "type": "library",
+      "bom-ref": "pkg:pypi/annotated-doc@0.0.7",
+      "name": "annotated-doc",
+      "version": "0.0.7",
+      "purl": "pkg:pypi/annotated-doc@0.0.7",
+      "author": "Sebasti\u00e1n Ram\u00edrez <tiangolo@gmail.com>",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/fastapi/annotated-doc"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
       "bom-ref": "pkg:pypi/annotated-types@0.8.0",
       "name": "annotated-types",
       "version": "0.8.0",
@@ -78,10 +99,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/asyncpg@0.30.0",
+      "bom-ref": "pkg:pypi/asyncpg@0.32.0",
       "name": "asyncpg",
-      "version": "0.30.0",
-      "purl": "pkg:pypi/asyncpg@0.30.0",
+      "version": "0.32.0",
+      "purl": "pkg:pypi/asyncpg@0.32.0",
       "author": "MagicStack Inc <hello@magic.io>",
       "licenses": [
         {
@@ -93,36 +114,15 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/authlib@1.3.2",
+      "bom-ref": "pkg:pypi/authlib@1.9.9",
       "name": "Authlib",
-      "version": "1.3.2",
-      "purl": "pkg:pypi/authlib@1.3.2",
+      "version": "1.9.9",
+      "purl": "pkg:pypi/authlib@1.9.9",
       "author": "Hsiaoming Yang <me@lepture.com>",
       "licenses": [
         {
           "license": {
             "id": "BSD-3-Clause"
-          }
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:pypi/cachetools@5.5.2",
-      "name": "cachetools",
-      "version": "5.5.2",
-      "purl": "pkg:pypi/cachetools@5.5.2",
-      "author": "Thomas Kemmer",
-      "externalReferences": [
-        {
-          "type": "website",
-          "url": "https://github.com/tkem/cachetools/"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
           }
         }
       ]
@@ -236,11 +236,11 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/fastapi@0.115.14",
+      "bom-ref": "pkg:pypi/fastapi@0.165.0",
       "name": "fastapi",
-      "version": "0.115.14",
-      "purl": "pkg:pypi/fastapi@0.115.14",
-      "author": "=?utf-8?q?Sebasti=C3=A1n_Ram=C3=ADrez?= <tiangolo@gmail.com>",
+      "version": "0.165.0",
+      "purl": "pkg:pypi/fastapi@0.165.0",
+      "author": "Sebasti\u00e1n Ram\u00edrez <tiangolo@gmail.com>",
       "externalReferences": [
         {
           "type": "website",
@@ -257,15 +257,15 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/google-auth@2.35.0",
+      "bom-ref": "pkg:pypi/google-auth@2.62.2",
       "name": "google-auth",
-      "version": "2.35.0",
-      "purl": "pkg:pypi/google-auth@2.35.0",
+      "version": "2.62.2",
+      "purl": "pkg:pypi/google-auth@2.62.2",
       "author": "Google Cloud Platform",
       "externalReferences": [
         {
           "type": "website",
-          "url": "https://github.com/googleapis/google-auth-library-python"
+          "url": "https://github.com/googleapis/google-cloud-python/tree/main/packages/google-auth"
         }
       ],
       "licenses": [
@@ -398,6 +398,21 @@
     },
     {
       "type": "library",
+      "bom-ref": "pkg:pypi/joserfc@1.8.0",
+      "name": "joserfc",
+      "version": "1.8.0",
+      "purl": "pkg:pypi/joserfc@1.8.0",
+      "author": "Hsiaoming Yang <me@lepture.com>",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
       "bom-ref": "pkg:pypi/lxml@6.1.3",
       "name": "lxml",
       "version": "6.1.3",
@@ -448,6 +463,27 @@
         {
           "license": {
             "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/opentelemetry-api@1.45.2",
+      "name": "opentelemetry-api",
+      "version": "1.45.2",
+      "purl": "pkg:pypi/opentelemetry-api@1.45.2",
+      "author": "OpenTelemetry Authors <cncf-opentelemetry-contributors@lists.cncf.io>",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/open-telemetry/opentelemetry-python/tree/main/opentelemetry-api"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
           }
         }
       ]
@@ -589,10 +625,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/pydantic-settings@2.6.1",
+      "bom-ref": "pkg:pypi/pydantic-settings@2.16.3",
       "name": "pydantic-settings",
-      "version": "2.6.1",
-      "purl": "pkg:pypi/pydantic-settings@2.6.1",
+      "version": "2.16.3",
+      "purl": "pkg:pypi/pydantic-settings@2.16.3",
       "author": "Samuel Colvin <s@muelcolvin.com>, Eric Jolibois <em.jolibois@gmail.com>, Hasan Ramezani <hasan.r67@gmail.com>",
       "externalReferences": [
         {
@@ -652,10 +688,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/pypdf@5.1.0",
+      "bom-ref": "pkg:pypi/pypdf@7.1.1",
       "name": "pypdf",
-      "version": "5.1.0",
-      "purl": "pkg:pypi/pypdf@5.1.0",
+      "version": "7.1.1",
+      "purl": "pkg:pypi/pypdf@7.1.1",
       "author": "Mathieu Fenniak <biziqe@mathieu.fenniak.net>",
       "licenses": [
         {
@@ -724,38 +760,11 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/requests@2.32.5",
+      "bom-ref": "pkg:pypi/requests@2.34.2",
       "name": "requests",
-      "version": "2.32.5",
-      "purl": "pkg:pypi/requests@2.32.5",
-      "author": "Kenneth Reitz",
-      "externalReferences": [
-        {
-          "type": "website",
-          "url": "https://requests.readthedocs.io"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0"
-          }
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:pypi/rsa@4.9.1",
-      "name": "rsa",
-      "version": "4.9.1",
-      "purl": "pkg:pypi/rsa@4.9.1",
-      "author": "Sybren A. St\u00fcvel",
-      "externalReferences": [
-        {
-          "type": "website",
-          "url": "https://stuvel.eu/rsa"
-        }
-      ],
+      "version": "2.34.2",
+      "purl": "pkg:pypi/requests@2.34.2",
+      "author": "Kenneth Reitz <me@kennethreitz.org>",
       "licenses": [
         {
           "license": {
@@ -787,15 +796,15 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/starlette@0.46.2",
+      "bom-ref": "pkg:pypi/starlette@1.10.0",
       "name": "starlette",
-      "version": "0.46.2",
-      "purl": "pkg:pypi/starlette@0.46.2",
+      "version": "1.10.0",
+      "purl": "pkg:pypi/starlette@1.10.0",
       "author": "Tom Christie <tom@tomchristie.com>",
       "externalReferences": [
         {
           "type": "website",
-          "url": "https://github.com/encode/starlette"
+          "url": "https://github.com/Kludex/starlette"
         }
       ],
       "licenses": [
@@ -859,15 +868,15 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:pypi/uvicorn@0.32.1",
+      "bom-ref": "pkg:pypi/uvicorn@0.54.0",
       "name": "uvicorn",
-      "version": "0.32.1",
-      "purl": "pkg:pypi/uvicorn@0.32.1",
-      "author": "Tom Christie <tom@tomchristie.com>, Marcelo Trylesinski <marcelotryle@gmail.com>",
+      "version": "0.54.0",
+      "purl": "pkg:pypi/uvicorn@0.54.0",
+      "author": "Tom Christie <tom@tomchristie.com>",
       "externalReferences": [
         {
           "type": "website",
-          "url": "https://www.uvicorn.org/"
+          "url": "https://uvicorn.dev/"
         }
       ],
       "licenses": [

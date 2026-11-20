@@ -17,6 +17,13 @@ from audit import log_audit
 router = APIRouter()
 
 
+def _cell(value) -> str:
+    """Netralkan CSV/formula injection: sel yang diawali = + - @ (atau tab/CR) diberi apostrof agar Excel
+    tak menjalankannya. Nama berkas dan email berasal dari user → tidak dipercaya."""
+    s = "" if value is None else str(value)
+    return "'" + s if s[:1] in ("=", "+", "-", "@", "\t", "\r") else s
+
+
 def _uuid_or_400(user_id: str) -> uuid.UUID:
     try:
         return uuid.UUID(user_id)
@@ -60,6 +67,29 @@ async def list_users(
         ],
         "total": total,
     }
+
+
+@router.get("/users/csv")
+async def export_users_csv(
+    db: AsyncSession = Depends(get_db),
+    viewer=Depends(get_current_auditor_or_admin),
+):
+    """Ekspor daftar user (bahan review akses tahunan): email, nama, role, status, login terakhir, dibuat."""
+    users = (await db.execute(select(User).order_by(User.email))).scalars().all()
+    output = io.StringIO()
+    output.write("\ufeff")  # BOM untuk Excel UTF-8
+    writer = csv.writer(output)
+    writer.writerow(["Email", "Nama", "Role", "Aktif", "Login Terakhir", "Dibuat"])
+    for u in users:
+        writer.writerow([
+            _cell(u.email), _cell(u.display_name), _cell(u.role), "ya" if u.is_active else "tidak",
+            u.last_login_at.isoformat() if u.last_login_at else "", u.created_at.isoformat() if u.created_at else "",
+        ])
+    return StreamingResponse(
+        iter([output.getvalue().encode("utf-8")]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=users.csv"},
+    )
 
 
 @router.post("/users/{user_id}/upgrade")
@@ -184,11 +214,11 @@ async def export_audit_logs_csv(
     for r in rows:
         writer.writerow([
             r.executed_at.isoformat() if r.executed_at else "",
-            r.user_email or "",
-            r.action or "",
-            ", ".join(r.source_files) if r.source_files else "",
-            r.result_file or "",
-            r.status or "",
+            _cell(r.user_email),
+            _cell(r.action),
+            _cell(", ".join(r.source_files) if r.source_files else ""),
+            _cell(r.result_file),
+            _cell(r.status),
             str(r.processing_ms or 0),
             str(r.ip_address or ""),
         ])

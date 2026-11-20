@@ -54,5 +54,8 @@ Tambahan (job e2e, opsional sampai disetujui): service Postgres 16, `playwright 
 `E2E_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/e2e PYTHON=python npm run test:e2e`
 (butuh backend dependency terpasang + qpdf + libreoffice di runner; tanpa PW_CHANNEL).
 
+Catatan keamanan dependency: `npm audit --omit=dev` akan tetap melaporkan Next.js 14.2.35 (advisory runtime server; SULAP memakai static export). Jadikan job npm audit
+informatif atau abaikan advisory Next sampai upgrade mayor dikerjakan (`security-holds.md` #4). `pip-audit` pada `requirements.lock` bersih.
+
 Catatan: pin action ke SHA bila kebijakan bank mensyaratkan. `audit` bisa merah karena CVE
 upstream; putuskan apakah wajib (required) atau informatif.

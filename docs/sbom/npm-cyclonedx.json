@@ -2,10 +2,10 @@
   "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:9ec69929-be05-4fe8-b5b9-ba7d54204c51",
+  "serialNumber": "urn:uuid:f8947574-0bb3-49ca-b25c-c4645053939c",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-11-20T05:20:10.416Z",
+    "timestamp": "2026-11-20T07:40:23.644Z",
     "lifecycles": [
       {
         "phase": "build"
@@ -69,6 +69,72 @@
         {
           "license": {
             "id": "OFL-1.1"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@napi-rs/canvas@0.1.100",
+      "type": "library",
+      "name": "@napi-rs/canvas",
+      "version": "0.1.100",
+      "scope": "optional",
+      "description": "Canvas for Node.js with skia backend",
+      "purl": "pkg:npm/%40napi-rs/canvas@0.1.100",
+      "properties": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@napi-rs/canvas/-/canvas-0.1.100.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Brooooooklyn/canvas.git"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "c6095803aab75cee4fdc1349631559d4857b0cb563a753f2ea7c1a83cf189edad2fb7bca1f261c32a5d54b8673b499b0cf6b86bf3d455a123fe0b81b479b900c"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@napi-rs/canvas-darwin-arm64@0.1.100",
+      "type": "library",
+      "name": "@napi-rs/canvas-darwin-arm64",
+      "version": "0.1.100",
+      "scope": "optional",
+      "description": "Canvas for Node.js with skia backend",
+      "purl": "pkg:npm/%40napi-rs/canvas-darwin-arm64@0.1.100",
+      "properties": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@napi-rs/canvas-darwin-arm64/-/canvas-darwin-arm64-0.1.100.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Brooooooklyn/canvas.git"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "d8f72cc11682ecbcbae390c6b7cf3ffffcee143849c4961d280b35b94de67e4d5ab58917b9f81c80b7c1a64e939b5da709005a36dd70a726ee3d9e2a3a14e8f0"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
           }
         }
       ]
@@ -262,19 +328,19 @@
       ]
     },
     {
-      "bom-ref": "axios@1.19.0",
+      "bom-ref": "axios@1.21.1",
       "type": "library",
       "name": "axios",
-      "version": "1.19.0",
+      "version": "1.21.1",
       "scope": "required",
       "author": "Matt Zabriskie",
       "description": "Promise based HTTP client for the browser and node.js",
-      "purl": "pkg:npm/axios@1.19.0",
+      "purl": "pkg:npm/axios@1.21.1",
       "properties": [],
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/axios/-/axios-1.19.0.tgz"
+          "url": "https://registry.npmjs.org/axios/-/axios-1.21.1.tgz"
         },
         {
           "type": "vcs",
@@ -292,7 +358,7 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "86dfe2b986571231712c7fc791ece077b9ba24a9471d71144a779a0f3f2e65ed468f9419b429e9c83b1c92f0221274fcf4e11b08b9a7b5ee11e2c9fb3f410a17"
+          "content": "e9e23943f638bbf526f5d0e5b11a2ae69636af19d44eff8be0fa4b8ad9db93f8b88dbdccc4b6790ac379221dc8cac6de4582b8a51f8feea7ccb0e425f5fc3015"
         }
       ],
       "licenses": [
@@ -401,19 +467,19 @@
       ]
     },
     {
-      "bom-ref": "follow-redirects@1.16.0",
+      "bom-ref": "follow-redirects@1.16.3",
       "type": "library",
       "name": "follow-redirects",
-      "version": "1.16.0",
+      "version": "1.16.3",
       "scope": "required",
       "author": "Ruben Verborgh <ruben@verborgh.org> (https://ruben.verborgh.org/)",
       "description": "HTTP and HTTPS modules that follow redirects.",
-      "purl": "pkg:npm/follow-redirects@1.16.0",
+      "purl": "pkg:npm/follow-redirects@1.16.3",
       "properties": [],
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.16.0.tgz"
+          "url": "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.16.3.tgz"
         },
         {
           "type": "vcs",
@@ -431,7 +497,7 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "cb9acdfee3ac69d153fc97d8c21c514b947b41c7be837cc6f7bf89aed159942f64957fd6e610fb8a22f349c2389d9a944bb0cd51d84f830e3123c5b62ee5e553"
+          "content": "b68392a2a37a779d568dfd5a38525872856fd5a343f6b8ff0b08cb534573e34a03b92a560dac8278a7b82692f934bd16745be838e088dc1468ebd1da8636d1d4"
         }
       ],
       "licenses": [
@@ -623,74 +689,32 @@
       ]
     },
     {
-      "bom-ref": "path2d-polyfill@2.0.1",
-      "type": "library",
-      "name": "path2d-polyfill",
-      "version": "2.0.1",
-      "scope": "optional",
-      "author": "nilzona",
-      "description": "Polyfills Path2D api for canvas rendering",
-      "purl": "pkg:npm/path2d-polyfill@2.0.1",
-      "properties": [],
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/path2d-polyfill/-/path2d-polyfill-2.0.1.tgz"
-        },
-        {
-          "type": "vcs",
-          "url": "git+https://github.com/nilzona/path2d-polyfill.git"
-        },
-        {
-          "type": "website",
-          "url": "https://github.com/nilzona/path2d-polyfill#readme"
-        },
-        {
-          "type": "issue-tracker",
-          "url": "https://github.com/nilzona/path2d-polyfill/issues"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "69dff76ec6a56db5a1981a340fa159e1134cc2c2ec3e92fa827be1b92694e559bb6f4e8aaf9b9b4a5b504344fb60ab222503be836db327874928d4d7232397b4"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ]
-    },
-    {
-      "bom-ref": "pdfjs-dist@4.0.379",
+      "bom-ref": "pdfjs-dist@4.10.38",
       "type": "library",
       "name": "pdfjs-dist",
-      "version": "4.0.379",
+      "version": "4.10.38",
       "scope": "required",
       "description": "Generic build of Mozilla's PDF.js library.",
-      "purl": "pkg:npm/pdfjs-dist@4.0.379",
+      "purl": "pkg:npm/pdfjs-dist@4.10.38",
       "properties": [],
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-4.0.379.tgz"
+          "url": "https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-4.10.38.tgz"
         },
         {
           "type": "vcs",
-          "url": "https://github.com/mozilla/pdfjs-dist"
+          "url": "git+https://github.com/mozilla/pdf.js.git"
         },
         {
           "type": "website",
-          "url": "http://mozilla.github.io/pdf.js/"
+          "url": "https://mozilla.github.io/pdf.js/"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "e87d06bf59e76bec26aebdc26a468a959e2b6eb2fc86f188140820e1872816e182d070b80760d58d71064c58c91232e57fc9d88b70b7fcc61170ce5b371d1e94"
+          "content": "fd8ddf705ad7100b0c8c95de2fd27cf991bd534d4b6ee59a632a6f0d6db2716d632f6ebd2f78ecdc35418c3274529f4da75baa0d7b03ad18a11c036164e97075"
         }
       ],
       "licenses": [
@@ -1114,8 +1138,8 @@
     {
       "type": "library",
       "name": "nanoid",
-      "version": "3.3.16",
-      "purl": "pkg:npm/nanoid@3.3.16"
+      "version": "3.3.20",
+      "purl": "pkg:npm/nanoid@3.3.20"
     },
     {
       "type": "library",
@@ -1126,8 +1150,8 @@
     {
       "type": "library",
       "name": "source-map-js",
-      "version": "1.2.1",
-      "purl": "pkg:npm/source-map-js@1.2.1"
+      "version": "1.2.4",
+      "purl": "pkg:npm/source-map-js@1.2.4"
     }
   ],
   "dependencies": [
@@ -1135,16 +1159,26 @@
       "ref": "frontend@0.1.0",
       "dependsOn": [
         "@fontsource-variable/plus-jakarta-sans@5.3.0",
-        "axios@1.19.0",
+        "axios@1.21.1",
         "lucide-react@1.28.0",
         "next@14.2.35",
-        "pdfjs-dist@4.0.379",
+        "pdfjs-dist@4.10.38",
         "react@18.3.1",
         "react-dom@18.3.1"
       ]
     },
     {
       "ref": "@fontsource-variable/plus-jakarta-sans@5.3.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "@napi-rs/canvas@0.1.100",
+      "dependsOn": [
+        "@napi-rs/canvas-darwin-arm64@0.1.100"
+      ]
+    },
+    {
+      "ref": "@napi-rs/canvas-darwin-arm64@0.1.100",
       "dependsOn": []
     },
     {
@@ -1171,9 +1205,9 @@
       "dependsOn": []
     },
     {
-      "ref": "axios@1.19.0",
+      "ref": "axios@1.21.1",
       "dependsOn": [
-        "follow-redirects@1.16.0",
+        "follow-redirects@1.16.3",
         "https-proxy-agent@5.0.1",
         "proxy-from-env@2.1.0"
       ]
@@ -1193,7 +1227,7 @@
       "dependsOn": []
     },
     {
-      "ref": "follow-redirects@1.16.0",
+      "ref": "follow-redirects@1.16.3",
       "dependsOn": []
     },
     {
@@ -1232,13 +1266,9 @@
       "dependsOn": []
     },
     {
-      "ref": "path2d-polyfill@2.0.1",
-      "dependsOn": []
-    },
-    {
-      "ref": "pdfjs-dist@4.0.379",
+      "ref": "pdfjs-dist@4.10.38",
       "dependsOn": [
-        "path2d-polyfill@2.0.1"
+        "@napi-rs/canvas@0.1.100"
       ]
     },
     {

@@ -23,10 +23,10 @@
 - [x] **Checkpoint C** — lint, tsc, build, test lulus; cek manual di browser (desktop & 375 px)
 
 ## Gelombang D — Dokumen ops & DR
-- [ ] D1 `docs/ops/runbook.md`, `raci.md` (isi dengan placeholder pemilik yang eksplisit "BELUM DITETAPKAN"), `sla.md`, `retensi-audit.md` [Req 7]
-- [ ] D2 `dpia-ringkas.md` + klasifikasi data (draf untuk Compliance) [Req 7]
-- [ ] D3 `dr.md`: RTO/RPO usulan, prosedur restore & backup lintas region; restore drill dijalankan manusia [Req 9]
-- [ ] D4 `@verifier` bukti penuh; README tautkan `docs/ops/`
+- [x] D1 `docs/ops/runbook.md`, `raci.md` (isi dengan placeholder pemilik yang eksplisit "BELUM DITETAPKAN"), `sla.md`, `retensi-audit.md` [Req 7]
+- [x] D2 `dpia-ringkas.md` + klasifikasi data (draf untuk Compliance) [Req 7]
+- [x] D3 `dr.md`: RTO/RPO usulan, prosedur restore & backup lintas region; restore drill dijalankan manusia [Req 9]
+- [x] D4 `@verifier` bukti penuh; README tautkan `docs/ops/`
 
 ## Catatan gelombang B
 - Fixture dibangkitkan (`backend/tools/make_fixtures.py`) — scan = PDF gambar-saja; `tests/conftest.py` + `tests/integration/`.

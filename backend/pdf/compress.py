@@ -86,7 +86,9 @@ async def compress_pdf(
         # qpdf exit codes: 0=OK, 1/2=error, 3=OK with warnings
         if process.returncode not in (0, 3):
             stderr = (await process.stderr.read()).decode("utf-8", errors="replace")[:500] if process.stderr else ""
-            raise HTTPException(status_code=422, detail=f"PDF tidak bisa diproses: {stderr}")
+            # Detail teknis (path /tmp, versi qpdf) hanya ke log — jangan ke user.
+            logger.warning(f"qpdf gagal job={job_id} rc={process.returncode}: {stderr}")
+            raise HTTPException(status_code=422, detail="PDF tidak bisa diproses. File mungkin rusak.")
 
         output_data = output_path.read_bytes()
         output_size = len(output_data)

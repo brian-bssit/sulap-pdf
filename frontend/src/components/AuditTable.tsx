@@ -147,6 +147,7 @@ export default function AuditTable() {
             <option value="CONVERT">CONVERT</option>
             <option value="EDIT_OVERLAY">EDIT OVERLAY</option>
             <option value="GOOGLE_LOGIN">GOOGLE LOGIN</option>
+            <option value="LOGOUT">LOGOUT</option>
             <option value="USER_ROLE_CHANGE">USER ROLE CHANGE</option>
             <option value="RATE_LIMITED">RATE LIMITED</option>
           </select>

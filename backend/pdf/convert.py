@@ -193,7 +193,9 @@ async def convert_to_pdf(
 
         if process.returncode != 0:
             stderr = stderr_bytes.decode("utf-8", errors="replace")[:500]
-            raise HTTPException(status_code=422, detail=f"Dokumen tidak bisa dikonversi: {stderr}")
+            # Detail teknis (path /tmp, argumen soffice) hanya ke log — jangan ke user.
+            logger.warning(f"soffice gagal job={job_id} rc={process.returncode}: {stderr}")
+            raise HTTPException(status_code=422, detail="Dokumen tidak bisa dikonversi. File mungkin rusak atau formatnya tidak didukung.")
 
         if not output_path.exists() or output_path.stat().st_size == 0:
             raise HTTPException(status_code=422, detail="Konversi gagal — file output kosong")

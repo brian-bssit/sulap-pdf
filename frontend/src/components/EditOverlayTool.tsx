@@ -59,9 +59,8 @@ export default function EditOverlayTool() {
       }
       setSuccess(true);
     } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } }).response?.status;
       const detail = errorDetail(err);
-      setError(detail ? t.common.failedWithStatus(status, detail) : t.edit.errFailed);
+      setError(detail ?? t.edit.errFailed);
     }
   };
 

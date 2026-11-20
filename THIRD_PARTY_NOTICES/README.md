@@ -9,7 +9,7 @@ THIRD_PARTY_NOTICES/
 ├── python/              ← 49 komponen PyPI + salinan LICENSE tiap distribusi + index.json
 ├── npm/                 ← 52 komponen npm (installed tree) + salinan LICENSE + index.json
 ├── system/              ← Debian base, CPython, qpdf, LibreOffice, curl (index.json + *.md)
-├── pdfjs/               ← pdfjs-dist 4.0.379 + LICENSE + catatan header worker
+├── pdfjs/               ← pdfjs-dist 4.10.38 + LICENSE + catatan header worker
 └── fonts/               ← Lato + DejaVu (Sans/Serif/Mono) + LICENSE + index.json
 ```
 

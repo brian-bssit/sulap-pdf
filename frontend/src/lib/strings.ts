@@ -28,7 +28,6 @@ export const t = {
     processAnother: "Proses dokumen lainnya",
     removeFile: (name: string) => `Hapus file ${name}`,
     retry: "Gagal memproses. Coba lagi.",
-    failedWithStatus: (status: number | undefined, detail: string) => `[${status ?? "?"}] ${detail}`,
     originalSize: (size: string) => `Ukuran asli: ${size}`,
   },
   job: {

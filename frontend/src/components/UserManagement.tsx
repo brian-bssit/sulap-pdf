@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Shield, User } from "lucide-react";
+import { Download, Shield, User } from "lucide-react";
 import api from "@/lib/api";
 import { errorDetail } from "@/lib/error";
 import { t } from "@/lib/strings";
@@ -56,12 +56,21 @@ export default function UserManagement({ readOnly = false }: { readOnly?: boolea
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-      <div className="px-6 py-5 border-b border-slate-100">
-        <h2 className="text-lg font-bold text-slate-800">{t.admin.userMgmt.title}</h2>
-        <p className="text-xs text-slate-500">
-          {readOnly ? t.admin.userMgmt.readOnly : t.admin.userMgmt.manage}
-        </p>
-        {error && <p role="alert" className="mt-2 text-xs font-medium text-red-700">{error}</p>}
+      <div className="px-6 py-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-lg font-bold text-slate-800">{t.admin.userMgmt.title}</h2>
+          <p className="text-xs text-slate-500">
+            {readOnly ? t.admin.userMgmt.readOnly : t.admin.userMgmt.manage}
+          </p>
+          {error && <p role="alert" className="mt-2 text-xs font-medium text-red-700">{error}</p>}
+        </div>
+        <button
+          onClick={() => window.open("/api/admin/users/csv", "_blank")}
+          className="flex items-center gap-2 bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors"
+        >
+          <Download size={16} aria-hidden="true" />
+          {t.admin.exportCsv}
+        </button>
       </div>
 
       <div className="overflow-x-auto">

@@ -37,9 +37,8 @@ export default function CompressTool() {
       form.append("level", level);
       await job.run("/api/pdf/compress", form, `compressed_${file.name}`);
     } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } }).response?.status;
       const detail = errorDetail(err);
-      setError(detail ? t.common.failedWithStatus(status, detail) : t.common.retry);
+      setError(detail ?? t.common.retry);
     }
   };
 

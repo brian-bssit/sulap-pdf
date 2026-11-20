@@ -203,3 +203,19 @@ test("edit: tarik sudut Block memperbesar ukurannya", async ({ page }) => {
   expect(r1.width - r0.width).toBeGreaterThan(30);
   expect(r1.height - r0.height).toBeGreaterThan(20);
 });
+
+test("logout: sesi berakhir, kembali ke halaman login, API 401 lagi", async ({ page }) => {
+  await loginAs(page, "e2e-logout@banksampoerna.com", "user");
+  await page.getByRole("button", { name: t.nav.logout }).click();
+  await expect(page.getByRole("heading", { name: t.app.name })).toBeVisible();
+  expect((await page.request.get("/api/auth/me")).status()).toBe(401);
+});
+
+test("keamanan: path traversal pada berkas statis tidak membocorkan berkas", async ({ page }) => {
+  for (const p of ["/..%2f..%2fbackend%2fmain.py", "/%2e%2e/%2e%2e/backend/main.py", "/..%2f..%2f..%2fetc%2fhosts"]) {
+    const r = await page.request.get(p, { maxRedirects: 0 });
+    const body = await r.text();
+    expect(body).not.toContain("import asyncio");
+    expect(body).not.toContain("localhost");
+  }
+});

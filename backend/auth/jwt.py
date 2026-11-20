@@ -1,11 +1,17 @@
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Request
+import uuid
+
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 import jwt
 from jwt import PyJWTError
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from audit import log_audit
 from config import settings
+from db.database import get_db
+from db.queries import get_user_by_id
 
 router = APIRouter()
 
@@ -31,7 +37,15 @@ async def get_token_from_cookie(request: Request) -> str | None:
 
 
 @router.post("/logout")
-async def logout():
+async def logout(request: Request, db: AsyncSession = Depends(get_db)):
+    """Hapus cookie; bila sesi masih valid, catat LOGOUT di audit (checklist: log login & logout)."""
+    payload = decode_token(request.cookies.get("cpdf_token") or "")
+    try:
+        user = await get_user_by_id(db, uuid.UUID(payload["user_id"])) if payload else None
+    except (KeyError, ValueError, TypeError):
+        user = None
+    if user:
+        await log_audit(db, request, str(user.id), user.email, "LOGOUT", status="SUCCESS")
     response = JSONResponse({"message": "Logged out"})
     response.delete_cookie(key="cpdf_token", path="/api")
     return response

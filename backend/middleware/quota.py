@@ -12,7 +12,7 @@ from db.database import get_db
 from db.models import AuditLog
 
 # Login dan penolakan kuota itu sendiri tidak dihitung sebagai operasi.
-_NOT_COUNTED = ("GOOGLE_LOGIN", "RATE_LIMITED", "USER_ROLE_CHANGE")
+_NOT_COUNTED = ("GOOGLE_LOGIN", "LOGOUT", "RATE_LIMITED", "USER_ROLE_CHANGE")
 
 
 async def _usage(db: AsyncSession, user_id, seconds: int) -> tuple[int, float | None]:

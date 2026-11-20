@@ -67,8 +67,9 @@ export default function DashboardPage() {
   }, [router]);
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-    router.push("/");
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
+    // Muat ulang penuh (bukan router.push): seluruh state/blob di memori halaman ikut terbuang.
+    window.location.assign("/");
   };
 
   // Pindahkan fokus ke judul setelah ganti tab → user keyboard/SR tahu konten berubah.
