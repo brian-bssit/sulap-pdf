@@ -121,12 +121,12 @@ def test_health_quiet_at_info(cap):
 
 
 # ── /api/ready ──
-def _ready(monkeypatch, db=True, qpdf=True, lo=True):
+def _ready(monkeypatch, db=True, qpdf=True, lo=True, tess=True):
     async def fake_db():
         return db
 
     monkeypatch.setattr(origin, "_db_ok", fake_db)
-    monkeypatch.setattr(origin.shutil, "which", lambda n: "/bin/x" if (qpdf if n == "qpdf" else lo) else None)
+    monkeypatch.setattr(origin.shutil, "which", lambda n: "/bin/x" if {"qpdf": qpdf, "tesseract": tess}.get(n, lo) else None)
     app = FastAPI()
     app.include_router(origin.router, prefix="/api")
     return TestClient(app).get("/api/ready")
@@ -137,7 +137,7 @@ def test_ready_all_ok(monkeypatch):
     assert r.status_code == 200 and r.json()["status"] == "READY"
 
 
-@pytest.mark.parametrize("kw,key", [({"db": False}, "db"), ({"qpdf": False}, "qpdf"), ({"lo": False}, "libreoffice")])
+@pytest.mark.parametrize("kw,key", [({"db": False}, "db"), ({"qpdf": False}, "qpdf"), ({"lo": False}, "libreoffice"), ({"tess": False}, "tesseract")])
 def test_ready_503_when_component_down(monkeypatch, kw, key):
     r = _ready(monkeypatch, **kw)
     assert r.status_code == 503 and r.json()["checks"][key] is False and r.json()["status"] == "NOT_READY"

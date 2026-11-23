@@ -142,9 +142,19 @@ export default function AuditTable() {
             <option value="">{t.admin.allActions}</option>
             <option value="MERGE">MERGE</option>
             <option value="COMPRESS">COMPRESS</option>
+            <option value="COMPRESS_LOSSY">COMPRESS LOSSY</option>
             <option value="REARRANGE">REARRANGE</option>
             <option value="REMOVE_PAGES">REMOVE PAGES</option>
             <option value="CONVERT">CONVERT</option>
+            <option value="IMG_TO_PDF">IMG TO PDF</option>
+            <option value="PDF_TO_WORD">PDF TO WORD</option>
+            <option value="OCR">OCR</option>
+            <option value="COMPARE">COMPARE</option>
+            <option value="SPLIT">SPLIT</option>
+            <option value="UNLOCK">UNLOCK</option>
+            <option value="PROTECT">PROTECT</option>
+            <option value="WATERMARK">WATERMARK</option>
+            <option value="PAGE_NUMBERS">PAGE NUMBERS</option>
             <option value="EDIT_OVERLAY">EDIT OVERLAY</option>
             <option value="GOOGLE_LOGIN">GOOGLE LOGIN</option>
             <option value="LOGOUT">LOGOUT</option>
@@ -172,7 +182,7 @@ export default function AuditTable() {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={t.admin.auditRegion}>
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="text-xs text-slate-500 uppercase bg-slate-50/80 border-b border-slate-200">

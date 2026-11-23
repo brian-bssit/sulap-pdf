@@ -19,20 +19,32 @@ import {
   FileUp,
   PenTool,
   Scissors,
+  SquareSplitHorizontal,
+  Lock,
+  Stamp,
+  FileType2,
+  ScanText,
+  GitCompare,
   GitPullRequest,
 } from "lucide-react";
 import CompressTool from "@/components/CompressTool";
 import MergeTool from "@/components/MergeTool";
 import RearrangeTool from "@/components/RearrangeTool";
 import RemovePagesTool from "@/components/RemovePagesTool";
-import ConvertTool from "@/components/ConvertTool";
+import SplitTool from "@/components/SplitTool";
+import SecurityTool from "@/components/SecurityTool";
+import WatermarkTool from "@/components/WatermarkTool";
+import ImageConvertTool from "@/components/ImageConvertTool";
+import ToWordTool from "@/components/ToWordTool";
+import OcrTool from "@/components/OcrTool";
+import CompareTool from "@/components/CompareTool";
 import EditOverlayTool from "@/components/EditOverlayTool";
 import AuditTable from "@/components/AuditTable";
 import UserManagement from "@/components/UserManagement";
 
 const LOGO_URL = "/bss-logo.jpg";
 
-type Tab = "merge" | "compress" | "rearrange" | "remove-pages" | "convert" | "edit" | "admin";
+type Tab = "merge" | "compress" | "rearrange" | "remove-pages" | "split" | "security" | "watermark" | "to-word" | "ocr" | "compare" | "convert" | "edit" | "admin";
 
 interface User {
   name: string;
@@ -48,6 +60,12 @@ const navItems: { id: Tab; label: string; icon: React.ReactNode; roles: readonly
   { id: "merge", label: t.nav.merge, icon: <Layers size={20} />, roles: ROLES },
   { id: "rearrange", label: t.nav.rearrange, icon: <Grid3x3 size={20} />, roles: ROLES },
   { id: "remove-pages", label: t.nav.removePages, icon: <Scissors size={20} />, roles: ROLES },
+  { id: "split", label: t.nav.split, icon: <SquareSplitHorizontal size={20} />, roles: ROLES },
+  { id: "watermark", label: t.nav.watermark, icon: <Stamp size={20} />, roles: ROLES },
+  { id: "security", label: t.nav.security, icon: <Lock size={20} />, roles: ROLES },
+  { id: "to-word", label: t.nav.toWord, icon: <FileType2 size={20} />, roles: ROLES },
+  { id: "ocr", label: t.nav.ocr, icon: <ScanText size={20} />, roles: ROLES },
+  { id: "compare", label: t.nav.compare, icon: <GitCompare size={20} />, roles: ROLES },
   { id: "convert", label: t.nav.convert, icon: <FileUp size={20} />, roles: ROLES },
   { id: "edit", label: t.nav.edit, icon: <PenTool size={20} />, roles: ROLES },
   { id: "admin", label: t.nav.admin, icon: <ShieldAlert size={20} />, roles: VIEW_ROLES },
@@ -241,8 +259,20 @@ function DashboardContent({ tab, me }: { tab: Tab; me: { id: string; role: Role 
       return <RearrangeTool />;
     case "remove-pages":
       return <RemovePagesTool />;
+    case "split":
+      return <SplitTool />;
+    case "watermark":
+      return <WatermarkTool />;
+    case "security":
+      return <SecurityTool />;
+    case "to-word":
+      return <ToWordTool />;
+    case "ocr":
+      return <OcrTool />;
+    case "compare":
+      return <CompareTool />;
     case "convert":
-      return <ConvertTool />;
+      return <ImageConvertTool />;
     case "edit":
       return <EditOverlayTool />;
     case "admin":

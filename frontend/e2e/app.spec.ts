@@ -18,6 +18,9 @@ test("user biasa: dashboard tanpa Admin Panel", async ({ page }) => {
 test("compress: unggah PDF → pratinjau tampil → hasil baru terunduh saat tombol Unduh ditekan", async ({ page }) => {
   await loginAs(page, "e2e-user@banksampoerna.com", "user");
   await page.setInputFiles("#compress-file-input", { name: "contoh.pdf", mimeType: "application/pdf", buffer: minimalPdf("Halo Compress") });
+  await expect(page.getByRole("note")).toContainText("tidak bisa dikembalikan"); // default Balanced → peringatan lossy
+  await page.getByRole("radio", { name: t.compress.levels.low.label }).check();
+  await expect(page.getByRole("note")).toHaveCount(0);
   await page.getByRole("button", { name: t.compress.action, exact: true }).click();
   // PDF 1 halaman kecil tak bisa diperkecil secara lossless → "Sudah optimal", file asli dikembalikan
   await expect(page.getByText(t.compress.unchangedTitle)).toBeVisible();
@@ -38,7 +41,7 @@ test("compress: tingkat kompresi terkirim ke server", async ({ page }) => {
   });
   await loginAs(page, "e2e-user@banksampoerna.com", "user");
   await page.setInputFiles("#compress-file-input", { name: "a.pdf", mimeType: "application/pdf", buffer: minimalPdf("A") });
-  await expect(page.getByRole("radio", { name: new RegExp(t.compress.levels.high.label) })).toBeChecked(); // default = perilaku lama
+  await expect(page.getByRole("radio", { name: new RegExp(t.compress.levels.balanced.label) })).toBeChecked(); // default UI = Balanced
   await page.getByRole("radio", { name: new RegExp(t.compress.levels.low.label) }).check();
   await page.getByRole("button", { name: t.compress.action, exact: true }).click();
   await expect(page.getByText(t.result.download)).toBeVisible();

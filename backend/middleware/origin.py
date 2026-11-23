@@ -34,6 +34,7 @@ async def readiness():
         "db": await _db_ok(),
         "qpdf": shutil.which("qpdf") is not None,
         "libreoffice": (shutil.which("soffice") or shutil.which("libreoffice")) is not None,
+        "tesseract": shutil.which("tesseract") is not None,  # OCR
     }
     ok = all(checks.values())
     return JSONResponse(

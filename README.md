@@ -36,10 +36,13 @@ Internal document processing toolkit for Bank Sahabat Sampoerna. Stateless, zero
 ### Compress PDF
 | | |
 |:---|:---|
-| **Engine** | `qpdf` (Apache 2.0) |
-| **Input** | 1 PDF file, max 30 MB |
-| **Method** | `--recompress-flate --compression-level=9 --object-streams=generate --linearize` |
-| **Output** | Streamed PDF with `X-Original-Size` / `X-Compressed-Size` headers |
+| **Engine** | `qpdf` (Apache 2.0) + `pikepdf` & `Pillow` untuk gambar (`pdf/compress_images.py`) |
+| **Input** | 1 PDF file, max 30 MB; form `level` (`low`\|`balanced`\|`high`, default `low`), `grayscale` (opsional) |
+| **Low** | Lossless: `qpdf --recompress-flate --compression-level=3` (tanpa `--linearize`) |
+| **Balanced** | Lossy: gambar > ±150 DPI diperkecil, JPEG q75, lalu qpdf level 6 |
+| **Extreme** (`high`) | Lossy: gambar > ±100 DPI diperkecil, JPEG q60, lalu qpdf level 9; opsi grayscale |
+| **Dilewati** | Gambar 1-bit/mask (JBIG2/CCITT), CMYK, `/Decode`, `/Mask`, tak bisa di-decode, atau hasil tak ≥10% lebih kecil; SMask dipertahankan |
+| **Output** | Streamed PDF; header `X-Original-Size`, `X-Compressed-Size`, `X-Compression`, `X-Images-Total`/`X-Images-Optimized` (lossy). Audit: `COMPRESS` / `COMPRESS_LOSSY` |
 
 ### Merge PDF
 | | |
@@ -75,13 +78,29 @@ Internal document processing toolkit for Bank Sahabat Sampoerna. Stateless, zero
 | **Rejected** | PDF itself, images, archives, executables (`.pdf .png .jpg .gif .webp .svg .zip .rar .7z .exe`…) |
 | **Output** | Streamed PDF, `X-Original-Size` / `X-Converted-Size` headers |
 
+### PDF Tools v2
+Semua tool: auth + kuota + audit (aksi sendiri), upload streaming, cleanup `/tmp` di `finally`, cek client disconnect. Backend memakai kerangka bersama `backend/pdf/job.py`.
+
+| Tool | Endpoint | Mesin | Catatan |
+|:---|:---|:---|:---|
+| **Split / Extract** | `POST /api/pdf/split` | pypdf | Rentang `1-3,5,8-` → 1 PDF, atau per N halaman → ZIP. Maks 200 halaman |
+| **Protect** | `POST /api/pdf/protect` | pikepdf | AES-256, password 8–128 karakter, izin cetak/salin opsional; owner password diacak dan dibuang |
+| **Unlock** | `POST /api/pdf/unlock` | pikepdf | Hanya untuk password yang diketahui user; salah → 422 "Password salah" |
+| **Watermark** | `POST /api/pdf/watermark` | pikepdf | Teks diagonal/tengah, transparansi, warna, ukuran, halaman terpilih (font base-14, karakter WinAnsi) |
+| **Nomor halaman** | `POST /api/pdf/page-numbers` | pikepdf | 6 posisi, format `n` / `n / total`, mulai dari N. Halaman yang diputar (`/Rotate`) belum diperhitungkan |
+| **Gambar → PDF** | `POST /api/pdf/images-to-pdf` | Pillow | 1–20 JPG/PNG, A4 atau ikut gambar, EXIF dihormati, batas piksel 40 MP/gambar & 100 MP total |
+| **PDF → Gambar** | — (browser) | pdf.js | PNG/JPG per halaman, ZIP ditulis di klien; tidak ada unggahan |
+| **PDF → Word** | `POST /api/pdf/to-word` | LibreOffice (`writer_pdf_import`) | Best-effort; PDF rusak/terenkripsi → 422; PDF scan butuh OCR dulu |
+| **OCR** | `POST /api/pdf/ocr` | pypdfium2 + tesseract (`ind`, `eng`) | Maks 50 halaman, halaman bertext dilewati, header `X-Pages-OCR`. 50 halaman ≈ 57 dtk, ≈ 1,1 GB puncak; hasil bisa jauh lebih besar dari input |
+| **Bandingkan** | `POST /api/pdf/compare` | pypdf + difflib | `file_a`, `file_b` → JSON diff per kata per halaman (maks 100 halaman); hanya teks |
+
 ### Admin Dashboard
 | | |
 |:---|:---|
 | **Audit Logs** | Table view, server-side search (email/aksi, wildcard di-escape) + filters: user, action, status, date range; paginated |
-| **User Management** | View registered users (paginated `{data,total}`), ubah role (`user` / `auditor` / `admin`); perubahan tercatat `USER_ROLE_CHANGE` |
+| **User Management** | View registered users (paginated `{data,total}`), ubah role langsung (Super Admin) atau lewat pengajuan dual control (IT DCA Officer → disetujui IT DCA Supervisor); tercatat `USER_ROLE_CHANGE` / `ROLE_CHANGE_*` |
 | **Export** | CSV download mengikuti filter + search aktif (BOM UTF-8 utk Excel) |
-| **Access** | `admin`: penuh. `auditor`: baca audit log, CSV, dan daftar user (read-only), tetap boleh memakai tool PDF. `user`: tanpa akses panel |
+| **Access** | `super_admin`: ubah role langsung. `dca_officer`: mengajukan perubahan role. `dca_supervisor`: menyetujui/menolak. `auditor`: baca audit log, CSV, daftar user (read-only). `user`: tanpa akses panel. Semua boleh memakai tool PDF; matriks lengkap di `docs/ops/matriks-role.md` |
 
 ### Security & Compliance
 - **Google OAuth** — GIS popup flow (client_id only, no client_secret needed)
@@ -89,7 +108,8 @@ Internal document processing toolkit for Bank Sahabat Sampoerna. Stateless, zero
 - **JWT cookie** — `SameSite=Strict`, `HttpOnly`, 8-hour expiry, configurable (`Secure` when served over HTTPS)
 - **Batas domain login** — hanya email dengan domain di `ALLOWED_EMAIL_DOMAINS` + `email_verified`; selain itu 403, tercatat `GOOGLE_LOGIN FAILED`
 - **Single-origin CORS** — only `FRONTEND_URL` is allowlisted (`allow_origins` + `allow_credentials`)
-- **Role gating** — `GET /api/admin/*` untuk `admin` atau `auditor`; `POST /api/admin/users/{id}/upgrade` hanya `admin`. Role dibaca dari DB tiap request → demote/nonaktif berlaku seketika
+- **Role gating & dual control** — `GET /api/admin/*` untuk auditor/officer/supervisor/super_admin; ubah role langsung hanya `super_admin`; selain itu lewat `/api/admin/role-requests` (maker ≠ approver, invarian: ≥1 Officer ∧ ≥1 Supervisor, atau ≥1 Super Admin). Role dibaca dari DB tiap request → demote/nonaktif berlaku seketika
+- **Sesi** — satu sesi aktif per akun (login baru menggantikan yang lama) dan logout otomatis setelah idle 10 menit (`IDLE_TIMEOUT_SECONDS`)
 - **Header keamanan** — CSP (self + Google Identity), nosniff, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy, HSTS bila HTTPS
 - **Upload streaming** — dibatasi per byte (413) tanpa memuat file ke RAM; `Content-Length` berlebih ditolak sebelum body dibaca
 - **Kuota per user** — dihitung dari `audit_logs` (aman multi-instance)
@@ -114,6 +134,8 @@ Internal document processing toolkit for Bank Sahabat Sampoerna. Stateless, zero
 | **PDF Merge/Rearrange** | pypdf 5.1 | BSD |
 | **PDF Edit Overlay** | pikepdf 8 | MPL 2.0 |
 | **PDF Compress** | qpdf (CLI) | Apache 2.0 |
+| **OCR / Render** | tesseract (CLI, `ind`+`eng`), pypdfium2 | Apache 2.0 / Apache-2.0 atau BSD-3 |
+| **Gambar → PDF** | Pillow | HPND |
 | **Document Convert** | LibreOffice headless | MPL 2.0 |
 | **Auth** | Authlib 1.3, PyJWT 2, google-auth 2.35 | BSD / MIT / Apache 2.0 |
 | **Infra** | Cloud Run, Cloud SQL, Cloud Build, Artifact Registry, Secret Manager | GCP |
@@ -231,6 +253,15 @@ All endpoints prefixed with `/api`. Mutating endpoints require valid JWT cookie.
 | `POST` | `/api/pdf/rearrange` | `file` + `operations` (JSON) | Rearrange pages |
 | `POST` | `/api/pdf/convert` | `file` (multipart) | Convert document to PDF |
 | `POST` | `/api/pdf/edit-overlay` | `file` + `operations` (JSON) | Add text/stamp/highlight overlays |
+| `POST` | `/api/pdf/split` | `file`, `mode` (`ranges`\|`every_n`), `ranges`, `every_n` | Extract halaman / pecah per N (ZIP) |
+| `POST` | `/api/pdf/protect` | `file`, `password`, `allow_print`, `allow_copy` | Enkripsi AES-256 |
+| `POST` | `/api/pdf/unlock` | `file`, `password` | Buka PDF berpassword |
+| `POST` | `/api/pdf/watermark` | `file`, `text`, `position`, `opacity`, `color`, `font_size`, `pages` | Watermark teks |
+| `POST` | `/api/pdf/page-numbers` | `file`, `position`, `format`, `start_at`, `font_size` | Nomor halaman |
+| `POST` | `/api/pdf/images-to-pdf` | `files` (1-20), `page_size` (`a4`\|`fit`) | Gambar → PDF |
+| `POST` | `/api/pdf/to-word` | `file` | PDF → DOCX |
+| `POST` | `/api/pdf/ocr` | `file`, `lang` (`ind`\|`eng`\|`ind+eng`) | Tambah lapisan teks ke PDF scan |
+| `POST` | `/api/pdf/compare` | `file_a`, `file_b` | Diff teks per kata (JSON) |
 
 ### Admin
 | Method | Path | Auth | Description |
@@ -238,7 +269,9 @@ All endpoints prefixed with `/api`. Mutating endpoints require valid JWT cookie.
 | `GET` | `/api/admin/audit-logs` | Admin JWT | Paginated logs; filter `user_id/action/status/search/date_from/date_to` |
 | `GET` | `/api/admin/audit-logs/csv` | Admin JWT | Export logs mengikuti filter + `search` (≤10k baris, BOM) |
 | `GET` | `/api/admin/users` | Admin JWT | User list paginated (`page`/`per_page`) → `{data,total}` |
-| `POST` | `/api/admin/users/{id}/upgrade?role=admin\|auditor\|user` | Admin JWT | Promote/demote user role |
+| `POST` | `/api/admin/users/{id}/upgrade?role=…` | Super Admin | Ubah role langsung (role: `user`, `auditor`, `dca_officer`, `dca_supervisor`, `super_admin`) |
+| `GET/POST` | `/api/admin/role-requests` (+ `/{id}/approve\|reject\|cancel`) | Officer / Supervisor / Super Admin | Pengajuan perubahan role (dual control) |
+| `GET` | `/api/admin/users/csv` | Viewer | Ekspor daftar user |
 
 ### Error Responses
 
@@ -276,7 +309,7 @@ All endpoints prefixed with `/api`. Mutating endpoints require valid JWT cookie.
 | `id` | BIGINT (PK) | Auto-increment |
 | `user_id` | UUID NULL | FK to users |
 | `user_email` | VARCHAR(255) | Denormalized for fast queries |
-| `action` | VARCHAR(50) | COMPRESS, MERGE, REARRANGE, REMOVE_PAGES, CONVERT, EDIT_OVERLAY, GOOGLE_LOGIN, RATE_LIMITED |
+| `action` | VARCHAR(50) | COMPRESS, COMPRESS_LOSSY, MERGE, REARRANGE, REMOVE_PAGES, CONVERT, EDIT_OVERLAY, SPLIT, PROTECT, UNLOCK, WATERMARK, PAGE_NUMBERS, IMG_TO_PDF, PDF_TO_WORD, OCR, COMPARE, GOOGLE_LOGIN, LOGOUT, SESSION_REPLACED, ROLE_CHANGE_REQUESTED/APPROVED/REJECTED/CANCELLED, USER_ROLE_CHANGE, RATE_LIMITED |
 | `source_files` | TEXT[] | Original filenames |
 | `result_file` | VARCHAR(255) | Output filename |
 | `file_sizes` | BIGINT[] | Input file sizes in bytes |
@@ -379,9 +412,9 @@ DEV_LOGIN_ENABLED=true
 ```
 Kunjungi:
 ```
-http://localhost:8080/api/auth/dev/login?email=admin@local.dev&role=admin
+http://localhost:8080/api/auth/dev/login?email=dev@local.dev&role=super_admin
 ```
-Auto-create/login user dengan email & role tsb. Jangan nyalakan di production.
+Role valid: `user`, `auditor`, `dca_officer`, `dca_supervisor`, `super_admin`. Auto-create/login user dengan email & role tsb. Jangan nyalakan di production.
 
 ---
 
