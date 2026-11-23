@@ -2,11 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
-body {
-  font-family: 'Inter', sans-serif;
-}
+/* Font: @fontsource-variable/plus-jakarta-sans (di-import di layout.tsx), self-host. Tema: lihat tailwind.config.ts. */
 
 .glass-effect {
   backdrop-filter: blur(12px);
@@ -14,17 +10,17 @@ body {
 }
 
 .sidebar-active {
-  background: linear-gradient(135deg, #eff6ff, #f0f9ff);
-  border-right: 3px solid #3b82f6;
+  background: linear-gradient(135deg, rgb(var(--c-blue-50)), rgb(var(--c-slate-50)));
+  border-right: 3px solid rgb(var(--c-blue-500));
 }
 
 .drag-over {
-  border-color: #3b82f6 !important;
-  background: #eff6ff !important;
+  border-color: rgb(var(--c-blue-500)) !important;
+  background: rgb(var(--c-blue-50)) !important;
 }
 
 .hover-lift {
-  transition: all 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
 }
 .hover-lift:hover {
   transform: translateY(-2px);
@@ -32,12 +28,25 @@ body {
 }
 
 .scrollbar-thin::-webkit-scrollbar { width: 6px; }
-.scrollbar-thin::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
-.scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-.scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.scrollbar-thin::-webkit-scrollbar-track { background: rgb(var(--c-slate-100)); border-radius: 3px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: rgb(var(--c-slate-300)); border-radius: 3px; }
+.scrollbar-thin::-webkit-scrollbar-thumb:hover { background: rgb(var(--c-slate-400)); }
 
 .shimmer-bg {
-  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background: linear-gradient(90deg, rgb(var(--c-slate-100)) 25%, rgb(var(--c-slate-200)) 50%, rgb(var(--c-slate-100)) 75%);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
+}
+
+/* bg-white = permukaan kartu: di mode gelap menjadi --surface (text-white tidak ikut berubah). Harus setelah utilities. */
+@media (prefers-color-scheme: dark) {
+  .bg-white { background-color: rgb(var(--surface)); }
+  .bg-white\/95 { background-color: rgb(var(--surface) / 0.95); }
+  .bg-white\/90 { background-color: rgb(var(--surface) / 0.9); }
+  .bg-white\/80 { background-color: rgb(var(--surface) / 0.8); }
+  .bg-white\/60 { background-color: rgb(var(--surface) / 0.6); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }

@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { UploadCloud, FileText, RotateCw, Download, Grid3x3, Loader2, ChevronRight } from "lucide-react";
+import { UploadCloud, FileText, RotateCw, Download, Grid3x3, Loader2, ChevronRight, ArrowLeft, ArrowRight } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
-import api from "@/lib/api";
 import { downloadBlob } from "@/lib/download";
+import { errorDetail } from "@/lib/error";
 import { formatBytes } from "@/lib/format";
+import { t } from "@/lib/strings";
+import { useJob } from "@/lib/useJob";
 import LoadingOverlay from "./LoadingOverlay";
 import SecurityFooter from "./SecurityFooter";
 
@@ -28,7 +30,8 @@ export default function RearrangeTool() {
   const [file, setFile] = useState<{ name: string; size: number } | null>(null);
   const fileBytes = useRef<ArrayBuffer | null>(null);
   const [pages, setPages] = useState<PageInfo[]>([]);
-  const [isProcessing, setProcessing] = useState(false);
+  const job = useJob();
+  const isProcessing = job.busy;
   const [allDone, setAllDone] = useState(false);
   const [isRendering, setRendering] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +50,7 @@ export default function RearrangeTool() {
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       const totalPages = pdf.numPages;
       if (totalPages > 200) {
-        setError("Maksimal 200 halaman");
+        setError(t.rearrange.errMaxPages);
         setRendering(false);
         return;
       }
@@ -72,7 +75,7 @@ export default function RearrangeTool() {
       setPages(pageInfos);
     } catch (err) {
       console.error("PDF render error:", err);
-      setError("Gagal membaca halaman PDF. Pastikan file tidak rusak.");
+      setError(t.rearrange.errRead);
     } finally {
       setRendering(false);
     }
@@ -185,13 +188,23 @@ export default function RearrangeTool() {
     setDragOverIdx(idx);
   };
 
+  // Alternatif keyboard/pembaca layar untuk drag-and-drop.
+  const movePage = (idx: number, dir: -1 | 1) => {
+    setPages((prev) => {
+      const to = idx + dir;
+      if (to < 0 || to >= prev.length) return prev;
+      const copy = [...prev];
+      [copy[idx], copy[to]] = [copy[to], copy[idx]];
+      return copy;
+    });
+  };
+
   const handleRearrange = async () => {
     if (!file || pages.length === 0) return;
     if (!fileBytes.current) {
-      setError("File tidak valid. Silakan upload ulang.");
+      setError(t.rearrange.errInvalidFile);
       return;
     }
-    setProcessing(true);
     setError(null);
 
     try {
@@ -212,11 +225,8 @@ export default function RearrangeTool() {
         ])
       );
 
-      const response = await api.post("/api/pdf/rearrange", formData, {
-        responseType: "blob",
-      });
-
-      downloadBlob(response.data as Blob, response.headers["content-disposition"] as string, `rearranged_${file.name}`);
+      const res = await job.run("/api/pdf/rearrange", formData, `rearranged_${file.name}`);
+      downloadBlob(res.blob, undefined, res.filename);
 
       // Auto-advance to next file in queue
       const nextIdx = queueState.idx + 1;
@@ -227,13 +237,7 @@ export default function RearrangeTool() {
         setAllDone(true);
       }
     } catch (err: unknown) {
-      const msg =
-        err && typeof err === "object" && "response" in err
-          ? (err as { response: { data?: { detail?: string } } }).response?.data?.detail || "Gagal mengatur ulang"
-          : "Gagal mengatur ulang. Coba lagi.";
-      setError(msg as string);
-    } finally {
-      setProcessing(false);
+      setError(errorDetail(err) ?? t.rearrange.errFailed);
     }
   };
 
@@ -245,16 +249,16 @@ export default function RearrangeTool() {
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-      {isProcessing && <LoadingOverlay />}
+      {job.busy && <LoadingOverlay phase={job.phase} percent={job.percent} />}
 
       <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-purple-50/50 to-transparent">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
-            <Grid3x3 size={20} className="text-purple-600" />
+            <Grid3x3 size={20} className="text-purple-600" aria-hidden="true" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-slate-800">Atur Ulang PDF</h2>
-            <p className="text-sm text-slate-500">Ubah urutan atau putar halaman PDF</p>
+            <h2 className="text-xl font-bold text-slate-800">{t.rearrange.title}</h2>
+            <p className="text-sm text-slate-500">{t.rearrange.subtitle}</p>
           </div>
         </div>
       </div>
@@ -265,7 +269,6 @@ export default function RearrangeTool() {
             ref={dropRef}
             role="button"
             tabIndex={0}
-            aria-label="Pilih file PDF untuk diatur"
             className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-purple-400 hover:bg-purple-50/30 transition-all cursor-pointer mb-6 focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10"
             onClick={() => fileInputRef.current?.click()}
             onKeyDown={(e) => {
@@ -278,8 +281,8 @@ export default function RearrangeTool() {
             <div className="w-14 h-14 rounded-2xl bg-purple-50 flex items-center justify-center mx-auto mb-4">
               <UploadCloud size={28} className="text-purple-500" />
             </div>
-            <p className="text-slate-700 font-semibold mb-1">Pilih file PDF untuk diatur</p>
-            <p className="text-slate-500 text-xs">Bisa pilih banyak file sekaligus</p>
+            <p className="text-slate-700 font-semibold mb-1">{t.rearrange.choose}</p>
+            <p className="text-slate-500 text-xs">{t.rearrange.multiHint}</p>
             <input
               ref={fileInputRef}
               type="file"
@@ -299,14 +302,14 @@ export default function RearrangeTool() {
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-slate-800 truncate">{file.name}</p>
                   <p className="text-xs text-slate-500">
-                    {formatBytes(file.size)} • {pages.length} halaman
+                    {t.rearrange.pagesInfo(formatBytes(file.size), pages.length)}
                     {queueState.total > 1 && <span className="ml-2 text-purple-500 font-medium">({queueState.idx + 1}/{queueState.total})</span>}
                   </p>
                 </div>
               </div>
               {queueState.total <= 1 && (
                 <button onClick={resetAll} className="text-xs text-purple-600 hover:text-purple-700 font-medium px-3 py-1.5 rounded-lg hover:bg-purple-100 transition-colors">
-                  Ganti File
+                  {t.rearrange.changeFile}
                 </button>
               )}
             </div>
@@ -324,8 +327,8 @@ export default function RearrangeTool() {
             {isRendering && (
               <div role="status" aria-live="polite" className="bg-slate-50 p-12 rounded-xl border border-slate-200 mb-6 text-center">
                 <Loader2 size={32} className="animate-spin text-purple-500 mx-auto mb-3" />
-                <p className="text-sm font-medium text-slate-600">Merender halaman...</p>
-                <p className="text-xs text-slate-500 mt-1">Mohon tunggu sebentar</p>
+                <p className="text-sm font-medium text-slate-600">{t.rearrange.rendering}</p>
+                <p className="text-xs text-slate-500 mt-1">{t.rearrange.pleaseWait}</p>
               </div>
             )}
 
@@ -350,7 +353,7 @@ export default function RearrangeTool() {
                         style={{ transform: `rotate(${page.rotation}deg)`, transition: "transform 0.3s" }}
                       >
                         {page.imageUrl ? (
-                          <img src={page.imageUrl} alt={`Halaman ${page.originalIndex}`} className="w-full h-auto object-contain" draggable={false} />
+                          <img src={page.imageUrl} alt={t.rearrange.pageAlt(page.originalIndex)} className="w-full h-auto object-contain" draggable={false} />
                         ) : (
                           <div className="w-full aspect-[3/4] flex items-center justify-center text-slate-300 text-2xl font-bold">
                             {page.originalIndex}
@@ -360,12 +363,28 @@ export default function RearrangeTool() {
 
                       <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-slate-900/70 to-transparent opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex justify-center gap-1.5 rounded-b-xl">
                         <button
-                          onClick={(e) => { e.stopPropagation(); rotatePage(idx); }}
-                          aria-label={`Putar halaman ${idx + 1} 90 derajat`}
-                          className="p-1.5 bg-white/95 text-slate-700 rounded-lg hover:bg-purple-100 hover:text-purple-700 transition-colors shadow-sm"
-                          title="Putar 90°"
+                          onClick={(e) => { e.stopPropagation(); movePage(idx, -1); }}
+                          disabled={idx === 0}
+                          aria-label={t.rearrange.moveLeft(idx + 1)}
+                          className="p-1.5 bg-white/95 text-slate-700 rounded-lg hover:bg-purple-100 hover:text-purple-700 transition-colors shadow-sm disabled:opacity-40"
                         >
-                          <RotateCw size={14} />
+                          <ArrowLeft size={14} aria-hidden="true" />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); rotatePage(idx); }}
+                          aria-label={t.rearrange.rotate(idx + 1)}
+                          className="p-1.5 bg-white/95 text-slate-700 rounded-lg hover:bg-purple-100 hover:text-purple-700 transition-colors shadow-sm"
+                          title={t.rearrange.rotateTitle}
+                        >
+                          <RotateCw size={14} aria-hidden="true" />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); movePage(idx, 1); }}
+                          disabled={idx === pages.length - 1}
+                          aria-label={t.rearrange.moveRight(idx + 1)}
+                          className="p-1.5 bg-white/95 text-slate-700 rounded-lg hover:bg-purple-100 hover:text-purple-700 transition-colors shadow-sm disabled:opacity-40"
+                        >
+                          <ArrowRight size={14} aria-hidden="true" />
                         </button>
                       </div>
 
@@ -388,16 +407,16 @@ export default function RearrangeTool() {
               <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                 <p className="text-xs text-slate-500">
                   {allDone
-                    ? "✅ Semua file selesai diproses"
+                    ? t.rearrange.allDone
                     : queueState.total > 1
-                      ? `📄 File ${queueState.idx + 1} dari ${queueState.total} — atur urutan lalu simpan`
-                      : "💡 Tarik thumbnail untuk mengubah urutan"
+                      ? t.rearrange.queueHint(queueState.idx + 1, queueState.total)
+                      : t.rearrange.hint
                   }
                 </p>
                 {allDone ? (
                   <button onClick={resetAll} className="flex items-center gap-2 bg-white border-2 border-purple-200 text-purple-700 px-6 py-2.5 rounded-xl font-semibold hover:bg-purple-50 transition-all">
-                    <Download size={16} />
-                    Proses Dokumen Lainnya
+                    <Download size={16} aria-hidden="true" />
+                    {t.common.processAnother}
                   </button>
                 ) : (
                   <button
@@ -406,7 +425,7 @@ export default function RearrangeTool() {
                     className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20 disabled:shadow-none"
                   >
                     {queueState.total > 1 ? <ChevronRight size={16} /> : <Download size={16} />}
-                    {queueState.total > 1 ? `Proses (${queueState.idx + 1}/${queueState.total})` : "Simpan & Download"}
+                    {queueState.total > 1 ? t.rearrange.processQueue(queueState.idx + 1, queueState.total) : t.rearrange.save}
                   </button>
                 )}
               </div>

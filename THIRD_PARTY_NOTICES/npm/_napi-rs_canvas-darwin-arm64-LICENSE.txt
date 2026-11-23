@@ -1,0 +1,4 @@
+@napi-rs/canvas-darwin-arm64 0.1.100
+License: MIT
+Full text: lih. registry npm
+(paket tidak menyertakan file LICENSE di distribusi npm.)

@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import select, func, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,7 +24,7 @@ async def create_user(db: AsyncSession, google_sub: str, email: str, display_nam
         display_name=display_name,
         picture_url=picture_url,
         role=role,
-        last_login_at=datetime.utcnow(),
+        last_login_at=datetime.now(timezone.utc),
     )
     db.add(user)
     await db.commit()
@@ -33,7 +33,7 @@ async def create_user(db: AsyncSession, google_sub: str, email: str, display_nam
 
 
 async def update_last_login(db: AsyncSession, user: User, display_name: str, picture_url: str | None) -> None:
-    user.last_login_at = datetime.utcnow()
+    user.last_login_at = datetime.now(timezone.utc)
     user.display_name = display_name
     user.picture_url = picture_url
     await db.commit()
@@ -53,6 +53,7 @@ async def insert_audit_log(
     error_message: str | None = None,
     ip_address: str | None = None,
     user_agent: str | None = None,
+    detail: dict | None = None,
 ) -> AuditLog:
     log = AuditLog(
         user_id=user_id,
@@ -67,6 +68,7 @@ async def insert_audit_log(
         error_message=error_message,
         ip_address=ip_address,
         user_agent=user_agent,
+        detail=detail,
     )
     db.add(log)
     await db.commit()

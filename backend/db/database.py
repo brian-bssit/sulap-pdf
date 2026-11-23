@@ -2,7 +2,11 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 
 from config import settings
 
-engine = create_async_engine(settings.database_url, echo=False, pool_size=5, max_overflow=10)
+# pool_pre_ping: buang koneksi mati (Cloud SQL menutup koneksi idle) sebelum dipakai;
+# pool_recycle: daur ulang koneksi tua (checklist: tutup koneksi DB setelah idle).
+engine = create_async_engine(
+    settings.database_url, echo=False, pool_size=5, max_overflow=10, pool_pre_ping=True, pool_recycle=1800
+)
 
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 

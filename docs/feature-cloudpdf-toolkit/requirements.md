@@ -1,6 +1,6 @@
-# CloudPDF Toolkit — Requirements
+# SULAP PDF — Requirements
 
-**Source PRD:** `prd-init.md` v2.0
+**Source PRD:** `docs/archive/prd-init.md` v2.0
 **Status:** Approved → Design
 
 ---

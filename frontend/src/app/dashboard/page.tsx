@@ -1,5 +1,10 @@
 "use client";
 
+import { redirectToLogin } from "@/lib/session";
+import { t } from "@/lib/strings";
+import IdleGuard from "@/components/IdleGuard";
+import RoleRequests from "@/components/RoleRequests";
+import { ROLES, VIEW_ROLES, isRole, type Role } from "@/lib/roles";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -14,6 +19,7 @@ import {
   FileUp,
   PenTool,
   Scissors,
+  GitPullRequest,
 } from "lucide-react";
 import CompressTool from "@/components/CompressTool";
 import MergeTool from "@/components/MergeTool";
@@ -31,51 +37,53 @@ type Tab = "merge" | "compress" | "rearrange" | "remove-pages" | "convert" | "ed
 interface User {
   name: string;
   email: string;
-  role: "user" | "admin";
+  id: string;
+  role: Role;
 }
 
-const DEMO_USER: User = { name: "Loading...", email: "", role: "user" };
+const DEMO_USER: User = { id: "", name: t.shell.loading, email: "", role: "user" };
 
-const navItems: { id: Tab; label: string; icon: React.ReactNode; roles: string[] }[] = [
-  { id: "compress", label: "Compress PDF", icon: <Minimize2 size={20} />, roles: ["user", "admin"] },
-  { id: "merge", label: "Merge PDF", icon: <Layers size={20} />, roles: ["user", "admin"] },
-  { id: "rearrange", label: "Rearrange PDF", icon: <Grid3x3 size={20} />, roles: ["user", "admin"] },
-  { id: "remove-pages", label: "Remove Pages", icon: <Scissors size={20} />, roles: ["user", "admin"] },
-  { id: "convert", label: "Convert to PDF", icon: <FileUp size={20} />, roles: ["user", "admin"] },
-  { id: "edit", label: "Edit PDF", icon: <PenTool size={20} />, roles: ["user", "admin"] },
-  { id: "admin", label: "Admin Panel", icon: <ShieldAlert size={20} />, roles: ["admin"] },
+const navItems: { id: Tab; label: string; icon: React.ReactNode; roles: readonly string[] }[] = [
+  { id: "compress", label: t.nav.compress, icon: <Minimize2 size={20} />, roles: ROLES },
+  { id: "merge", label: t.nav.merge, icon: <Layers size={20} />, roles: ROLES },
+  { id: "rearrange", label: t.nav.rearrange, icon: <Grid3x3 size={20} />, roles: ROLES },
+  { id: "remove-pages", label: t.nav.removePages, icon: <Scissors size={20} />, roles: ROLES },
+  { id: "convert", label: t.nav.convert, icon: <FileUp size={20} />, roles: ROLES },
+  { id: "edit", label: t.nav.edit, icon: <PenTool size={20} />, roles: ROLES },
+  { id: "admin", label: t.nav.admin, icon: <ShieldAlert size={20} />, roles: VIEW_ROLES },
 ];
 
-const pageTitles: Record<Tab, { title: string; subtitle: string }> = {
-  merge: { title: "Gabung PDF", subtitle: "Gabungkan 2 hingga 10 file PDF menjadi satu" },
-  compress: { title: "Kompres PDF", subtitle: "Kurangi ukuran file PDF tanpa kehilangan kualitas" },
-  rearrange: { title: "Atur Ulang PDF", subtitle: "Ubah urutan atau putar halaman PDF" },
-  "remove-pages": { title: "Hapus Halaman", subtitle: "Pilih dan hapus halaman tertentu dari PDF" },
-  convert: { title: "Konversi ke PDF", subtitle: "Ubah dokumen apapun menjadi PDF — DOCX, XLSX, PPTX, dan lainnya" },
-  edit: { title: "Edit PDF", subtitle: "Tambah teks, stempel, dan highlight di atas halaman PDF" },
-  admin: { title: "Admin Panel", subtitle: "User management & audit logs" },
-};
+const pageTitles: Record<Tab, { title: string; subtitle: string }> = t.pages;
 
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User>(DEMO_USER);
+  const [idleSeconds, setIdleSeconds] = useState(0);
   const [activeTab, setActiveTab] = useState<Tab>("compress");
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me", { credentials: "include" })
       .then((res) => {
-        if (res.ok) return res.json();
-        if (res.status === 401) router.push("/");
-        throw new Error("Auth failed");
+        if (res.status === 401) {
+          redirectToLogin(res.headers.get("x-auth-reason")); // membawa alasan (idle / login di tempat lain)
+          return null;
+        }
+        if (!res.ok) throw new Error("Auth failed");
+        return res.json();
       })
-      .then((data) => setUser({ name: data.display_name, email: data.email, role: data.role }))
+      .then((data) => {
+        if (!data) return;
+        setUser({ id: data.id, name: data.display_name, email: data.email, role: isRole(data.role) ? data.role : "user" });
+        setIdleSeconds(data.idle_timeout_seconds ?? 0);
+      })
       .catch(() => router.push("/"));
   }, [router]);
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-    router.push("/");
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
+    // Muat ulang penuh (bukan router.push): seluruh state/blob di memori halaman ikut terbuang.
+    window.location.assign("/");
   };
 
   // Pindahkan fokus ke judul setelah ganti tab → user keyboard/SR tahu konten berubah.
@@ -90,10 +98,11 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
+      {idleSeconds > 0 && <IdleGuard timeoutSeconds={idleSeconds} />}
       {/* Sidebar */}
       <aside
         id="dashboard-sidebar"
-        aria-label="Menu navigasi"
+        aria-label={t.nav.label}
         className={`fixed md:static inset-y-0 left-0 z-40 w-72 bg-white border-r border-slate-200/80 transform transition-transform duration-300 ease-in-out flex flex-col shadow-xl md:shadow-none ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
@@ -101,11 +110,11 @@ export default function DashboardPage() {
         {/* Logo */}
         <div className="py-6 px-6 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <img src={LOGO_URL} alt="BSS Logo" className="h-14 object-contain" />
+            <img src={LOGO_URL} alt={t.shell.logoAlt} className="h-14 object-contain" />
             <div>
               <span className="text-lg font-bold text-slate-800 tracking-tight">SULAP PDF</span>
               <span className="block text-[11px] text-slate-500 font-medium uppercase tracking-wider">
-                SULAP PDF v1.0
+                {t.shell.version}
               </span>
             </div>
           </div>
@@ -135,7 +144,7 @@ export default function DashboardPage() {
               <span className="ml-3">{item.label}</span>
               {item.id === "admin" && (
                 <span className="ml-auto text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">
-                  ADMIN
+                  {(t.roles[user.role] ?? user.role).toUpperCase()}
                 </span>
               )}
             </button>
@@ -158,8 +167,8 @@ export default function DashboardPage() {
             onClick={handleLogout}
             className="w-full flex items-center px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-colors"
           >
-            <LogOut size={16} className="mr-3" />
-            Keluar
+            <LogOut size={16} className="mr-3" aria-hidden="true" />
+            {t.nav.logout}
           </button>
         </div>
       </aside>
@@ -172,7 +181,7 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label={isMobileMenuOpen ? "Tutup menu navigasi" : "Buka menu navigasi"}
+              aria-label={isMobileMenuOpen ? t.nav.close : t.nav.open}
               aria-expanded={isMobileMenuOpen}
               aria-controls="dashboard-sidebar"
               className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
@@ -187,7 +196,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs font-medium text-emerald-700">Stateless Secure</span>
+              <span className="text-xs font-medium text-emerald-700">{t.shell.badge}</span>
             </div>
           </div>
         </header>
@@ -195,17 +204,17 @@ export default function DashboardPage() {
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-thin">
           <div className="max-w-5xl mx-auto w-full animate-[fadeIn_0.3s_ease-out]">
-            <DashboardContent tab={activeTab} />
+            <DashboardContent tab={activeTab} me={{ id: user.id, role: user.role }} />
           </div>
         </div>
 
         {/* Footer */}
         <footer className="flex-shrink-0 border-t border-slate-200/80 bg-white/60 glass-effect px-4 md:px-8 py-3">
           <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
-            <span>© 2026 Bank Sahabat Sampoerna. Internal use only.</span>
+            <span>{t.app.footer}</span>
             <span className="flex items-center gap-1.5">
               <ShieldCheck size={14} className="text-emerald-500" />
-              Stateless Processing — No File Storage
+              {t.app.stateless}
             </span>
           </div>
         </footer>
@@ -222,7 +231,7 @@ export default function DashboardPage() {
   );
 }
 
-function DashboardContent({ tab }: { tab: Tab }) {
+function DashboardContent({ tab, me }: { tab: Tab; me: { id: string; role: Role } }) {
   switch (tab) {
     case "merge":
       return <MergeTool />;
@@ -237,39 +246,30 @@ function DashboardContent({ tab }: { tab: Tab }) {
     case "edit":
       return <EditOverlayTool />;
     case "admin":
-      return <AdminPanel />;
+      return <AdminPanel me={me} />;
   }
 }
 
-function AdminPanel() {
-  const [subTab, setSubTab] = useState<"users" | "audit">("users");
+function AdminPanel({ me }: { me: { id: string; role: Role } }) {
+  const [subTab, setSubTab] = useState<"users" | "requests" | "audit">("users");
+  const tabCls = (on: boolean) =>
+    `flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+      on ? "bg-blue-100 text-blue-700 shadow-sm" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+    }`;
   return (
     <div>
-      <div className="flex gap-3 mb-6">
-        <button
-          onClick={() => setSubTab("users")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-            subTab === "users"
-              ? "bg-blue-100 text-blue-700 shadow-sm"
-              : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-          }`}
-        >
-          <Users size={16} /> User Management
+      <div className="flex flex-wrap gap-3 mb-6">
+        <button onClick={() => setSubTab("users")} className={tabCls(subTab === "users")}>
+          <Users size={16} aria-hidden="true" /> {t.admin.users}
         </button>
-        <button
-          onClick={() => setSubTab("audit")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-            subTab === "audit"
-              ? "bg-blue-100 text-blue-700 shadow-sm"
-              : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-          }`}
-        >
-          <ShieldAlert size={16} /> Audit Logs
+        <button onClick={() => setSubTab("requests")} className={tabCls(subTab === "requests")}>
+          <GitPullRequest size={16} aria-hidden="true" /> {t.admin.requests}
+        </button>
+        <button onClick={() => setSubTab("audit")} className={tabCls(subTab === "audit")}>
+          <ShieldAlert size={16} aria-hidden="true" /> {t.admin.audit}
         </button>
       </div>
-      {subTab === "users" ? <UserManagement /> : <AuditTable />}
+      {subTab === "users" ? <UserManagement me={me} /> : subTab === "requests" ? <RoleRequests me={me} /> : <AuditTable />}
     </div>
   );
 }
-
-

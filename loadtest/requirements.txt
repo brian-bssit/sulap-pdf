@@ -1,0 +1,3 @@
+# Alat uji beban, TERPISAH dari dependency aplikasi (tidak masuk image). Locust: MIT.
+# Jangan pakai k6 (AGPL, dilarang kebijakan lisensi).
+locust==2.*

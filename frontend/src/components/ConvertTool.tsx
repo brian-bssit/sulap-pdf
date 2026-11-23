@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { UploadCloud, FileText, X, FileUp } from "lucide-react";
-import api from "@/lib/api";
-import { downloadBlob } from "@/lib/download";
+import { UploadCloud, X, FileUp } from "lucide-react";
 import { errorDetail } from "@/lib/error";
 import { formatBytes } from "@/lib/format";
+import { t } from "@/lib/strings";
+import { useJob } from "@/lib/useJob";
 import LoadingOverlay from "./LoadingOverlay";
+import ResultPanel from "./ResultPanel";
 import SecurityFooter from "./SecurityFooter";
 
 const ACCEPT_TYPES = [
@@ -25,177 +26,128 @@ function getFileIcon(ext: string): string {
 
 export default function ConvertTool() {
   const [file, setFile] = useState<{ name: string; size: number; ext: string; raw: File } | null>(null);
-  const [isProcessing, setProcessing] = useState(false);
-  const [result, setResult] = useState<{ original: number; converted: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const job = useJob();
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (f) {
-      const ext = "." + f.name.split(".").pop()?.toLowerCase();
-      setFile({ name: f.name, size: f.size, ext, raw: f });
-      setResult(null);
-      setError(null);
-    }
+  const pick = (f: File | undefined) => {
+    if (!f) return;
+    const ext = "." + f.name.split(".").pop()?.toLowerCase();
+    setFile({ name: f.name, size: f.size, ext, raw: f });
+    job.reset();
+    setError(null);
   };
+
+  const reset = () => { setFile(null); job.reset(); setError(null); };
 
   const handleConvert = async () => {
     if (!file) return;
-    setProcessing(true);
     setError(null);
-
     try {
       const formData = new FormData();
       formData.append("file", file.raw);
-
-      const response = await api.post("/api/pdf/convert", formData, {
-        responseType: "blob",
-      });
-
-      const originalSize = parseInt(response.headers["x-original-size"] || "0");
-      const convertedSize = parseInt(response.headers["x-converted-size"] || "0");
-      setResult({ original: originalSize, converted: convertedSize });
-
-      const stem = file.name.replace(/\.[^/.]+$/, "");
-      downloadBlob(response.data as Blob, response.headers["content-disposition"] as string, `${stem}.pdf`);
+      await job.run("/api/pdf/convert", formData, `${file.name.replace(/\.[^/.]+$/, "")}.pdf`);
     } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } }).response?.status;
       const detail = errorDetail(err);
-      setError(detail ? `[${status}] ${detail}` : "Gagal memproses. Coba lagi.");
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const f = e.dataTransfer.files[0];
-    if (f) {
-      const ext = "." + f.name.split(".").pop()?.toLowerCase();
-      setFile({ name: f.name, size: f.size, ext, raw: f });
-      setResult(null);
-      setError(null);
+      setError(detail ?? t.common.retry);
     }
   };
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-      {isProcessing && <LoadingOverlay />}
+      {job.busy && <LoadingOverlay phase={job.phase} percent={job.percent} />}
 
       {/* Header */}
       <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-violet-50/50 to-transparent">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
-            <FileUp size={20} className="text-violet-600" />
+            <FileUp size={20} className="text-violet-600" aria-hidden="true" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-slate-800">Konversi ke PDF</h2>
-            <p className="text-sm text-slate-500">Ubah dokumen apapun menjadi PDF — DOCX, XLSX, PPTX, ODT, dan lainnya</p>
+            <h2 className="text-xl font-bold text-slate-800">{t.convert.title}</h2>
+            <p className="text-sm text-slate-500">{t.convert.subtitle}</p>
           </div>
         </div>
       </div>
 
       <div className="p-6">
-        {/* Upload Area */}
-        {!file ? (
-          <div
-            role="button"
-            tabIndex={0}
-            aria-label="Pilih file dokumen"
-            className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-violet-400 hover:bg-violet-50/30 transition-all cursor-pointer mb-6 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
-            onClick={() => document.getElementById("convert-file-input")?.click()}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                document.getElementById("convert-file-input")?.click();
-              }
-            }}
-            onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("drag-over"); }}
-            onDragLeave={(e) => e.currentTarget.classList.remove("drag-over")}
-            onDrop={(e) => { e.currentTarget.classList.remove("drag-over"); handleDrop(e); }}
-          >
-            <div className="w-14 h-14 rounded-2xl bg-violet-50 flex items-center justify-center mx-auto mb-4">
-              <UploadCloud size={28} className="text-violet-500" />
-            </div>
-            <p className="text-slate-700 font-semibold mb-1">Pilih file dokumen</p>
-            <p className="text-slate-500 text-xs">
-              DOC, DOCX, XLS, XLSX, PPT, PPTX, ODT, ODS, ODP, RTF, TXT, HTML, CSV, XML • Maks 30MB
-            </p>
-            <input
-              type="file"
-              id="convert-file-input"
-              accept={ACCEPT_TYPES}
-              className="hidden"
-              onChange={handleFileSelect}
-            />
-          </div>
+        {job.result ? (
+          <ResultPanel result={job.result} title={t.convert.resultTitle} onReset={reset} accent="violet">
+            {file && t.convert.resultInfo(formatBytes(file.size), formatBytes(job.result.blob.size))}
+          </ResultPanel>
         ) : (
-          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-200 rounded-xl mb-6">
-            <div className="flex items-center gap-3 overflow-hidden">
-              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm text-lg">
-                {getFileIcon(file.ext)}
+          <>
+            {/* Upload Area */}
+            {!file ? (
+              <div
+                role="button"
+                tabIndex={0}
+                className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-violet-400 hover:bg-violet-50/30 transition-all cursor-pointer mb-6 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+                onClick={() => document.getElementById("convert-file-input")?.click()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    document.getElementById("convert-file-input")?.click();
+                  }
+                }}
+                onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("drag-over"); }}
+                onDragLeave={(e) => e.currentTarget.classList.remove("drag-over")}
+                onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("drag-over"); pick(e.dataTransfer.files[0]); }}
+              >
+                <div className="w-14 h-14 rounded-2xl bg-violet-50 flex items-center justify-center mx-auto mb-4">
+                  <UploadCloud size={28} className="text-violet-500" aria-hidden="true" />
+                </div>
+                <p className="text-slate-700 font-semibold mb-1">{t.convert.choose}</p>
+                <p className="text-slate-500 text-xs">{t.convert.formats}</p>
+                <input
+                  type="file"
+                  id="convert-file-input"
+                  accept={ACCEPT_TYPES}
+                  className="hidden"
+                  onChange={(e) => pick(e.target.files?.[0])}
+                />
               </div>
-              <div className="truncate">
-                <p className="text-sm font-semibold text-slate-800 truncate">{file.name}</p>
-                <p className="text-xs text-slate-500">
-                  {file.ext.toUpperCase().replace(".", "")} • {formatBytes(file.size)}
-                </p>
+            ) : (
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-200 rounded-xl mb-6">
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm text-lg flex-shrink-0" aria-hidden="true">
+                    {getFileIcon(file.ext)}
+                  </div>
+                  <div className="truncate">
+                    <p className="text-sm font-semibold text-slate-800 truncate">{file.name}</p>
+                    <p className="text-xs text-slate-500">
+                      {file.ext.toUpperCase().replace(".", "")} • {formatBytes(file.size)}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={reset}
+                  aria-label={t.common.removeFile(file.name)}
+                  className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <X size={16} aria-hidden="true" />
+                </button>
               </div>
+            )}
+
+            {error && (
+              <div role="alert" className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+                <p className="text-sm font-semibold text-red-700">{error}</p>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between gap-3 pt-4 border-t border-slate-100">
+              <p className="text-xs text-slate-500">{file ? t.convert.ready : t.common.chooseFirst}</p>
+              <button
+                onClick={handleConvert}
+                disabled={!file}
+                className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-violet-700 hover:to-purple-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-violet-500/20 disabled:shadow-none"
+              >
+                <FileUp size={16} aria-hidden="true" />
+                {t.convert.action}
+              </button>
             </div>
-            <button
-              onClick={() => { setFile(null); setResult(null); setError(null); }}
-              aria-label={`Hapus file ${file.name}`}
-              className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-            >
-              <X size={16} />
-            </button>
-          </div>
+          </>
         )}
-
-        {/* Result notification */}
-        {result && (
-          <div role="status" aria-live="polite" className="mb-4 p-4 bg-violet-50 border border-violet-200 rounded-xl flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-violet-800">Berhasil dikonversi!</p>
-              <p className="text-xs text-violet-600">
-                {formatBytes(result.original)} → {formatBytes(result.converted)}
-              </p>
-            </div>
-            <FileText size={24} className="text-violet-500" />
-          </div>
-        )}
-
-        {/* Error */}
-        {error && (
-          <div role="alert" className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
-            <p className="text-sm font-semibold text-red-700">{error}</p>
-          </div>
-        )}
-
-        {/* Action Button */}
-        <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-          <p className="text-xs text-slate-500">
-            {!file ? "⚠️ Pilih file terlebih dahulu" : result ? "✅ Selesai" : "✅ File siap dikonversi"}
-          </p>
-          {result ? (
-            <button
-              onClick={() => { setFile(null); setResult(null); setError(null); }}
-              className="flex items-center gap-2 bg-white border-2 border-violet-200 text-violet-700 px-6 py-2.5 rounded-xl font-semibold hover:bg-violet-50 transition-all"
-            >
-              <FileUp size={16} />
-              Proses Dokumen Lainnya
-            </button>
-          ) : (
-            <button
-              onClick={handleConvert}
-              disabled={!file}
-              className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-violet-700 hover:to-purple-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-violet-500/20 disabled:shadow-none"
-            >
-              <FileUp size={16} />
-              Konversi & Download
-            </button>
-          )}
-        </div>
       </div>
       <SecurityFooter />
     </div>

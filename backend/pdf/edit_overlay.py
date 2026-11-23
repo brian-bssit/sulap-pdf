@@ -3,7 +3,7 @@ import logging
 import re
 import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pikepdf
@@ -17,6 +17,8 @@ from db.database import get_db
 from auth.dependencies import get_current_user
 from audit import log_audit
 from pdf.dl_headers import attachment_filename
+from pdf.errors import raise_if_encrypted
+from pdf.upload import save_upload
 from pdf.font_data import EMBEDDED_FONTS
 
 logger = logging.getLogger("cloudpdf")
@@ -335,6 +337,12 @@ def _validate_ops(raw: str, total_pages: int) -> list[dict]:
                 raise HTTPException(status_code=400, detail="opacity harus 0-1")
 
         item = dict(op)
+        # Default yang divalidasi lewat .get() harus ikut tersimpan: _apply_overlay membaca op["font"] /
+        # op["font_size"] langsung (tanpa ini op teks tanpa font → KeyError → 500).
+        if otype in ("text", "stamp"):
+            item["font_size"] = op.get("font_size", 24)
+        if otype == "text":
+            item["font"] = op.get("font", "Helvetica")
         item["page"] = idx
         item["color"] = color
         validated.append(item)
@@ -353,6 +361,8 @@ def _run_pdf_job(
 
     try:
         total_pages = len(pdf.pages)
+        if total_pages == 0:
+            raise HTTPException(status_code=422, detail="PDF rusak atau tidak memiliki halaman")
         if total_pages > max_pages:
             raise HTTPException(status_code=400, detail=f"Maksimal {max_pages} halaman")
 
@@ -387,22 +397,17 @@ async def edit_overlay(
         if not (file.filename or "").lower().endswith(".pdf"):
             raise HTTPException(status_code=400, detail="Hanya file PDF yang didukung")
 
-        content = await file.read()
-        input_size = len(content)
-
-        if input_size > settings.max_file_size_mb * 1024 * 1024:
-            raise HTTPException(status_code=413, detail=f"File terlalu besar. Maksimal {settings.max_file_size_mb} MB")
-        if input_size == 0 or content[:4] != PDF_MAGIC:
-            raise HTTPException(status_code=400, detail="Format file tidak didukung. Hanya PDF")
-
-        input_path.write_bytes(content)
-        del content
+        input_size = await save_upload(file, input_path, settings.max_file_size_mb * 1024 * 1024)
+        with open(input_path, "rb") as f:
+            if f.read(4) != PDF_MAGIC:
+                raise HTTPException(status_code=400, detail="Format file tidak didukung. Hanya PDF")
+        await raise_if_encrypted(input_path)
 
         if await request.is_disconnected():
             await _audit(db, request, user, file, input_size, 0, 0, "CANCELLED_BY_CLIENT")
             return StreamingResponse(iter([]), status_code=499)
 
-        author_label = f"{user.display_name} · {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}"
+        author_label = f"{user.display_name} · {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}"
         # pikepdf open/save sinkron & berat → threadpool biar event loop tak tersumbat.
         overlay_count = await run_in_threadpool(
             _run_pdf_job, input_path, output_path, operations, settings.max_pages_edit, author_label

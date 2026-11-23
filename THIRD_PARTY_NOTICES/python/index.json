@@ -1,5 +1,19 @@
 [
   {
+    "name": "alembic",
+    "version": "1.20.1",
+    "license": "MIT",
+    "source": "https://alembic.sqlalchemy.org",
+    "modifications": "none"
+  },
+  {
+    "name": "annotated-doc",
+    "version": "0.0.7",
+    "license": "MIT",
+    "source": "https://github.com/fastapi/annotated-doc",
+    "modifications": "none"
+  },
+  {
     "name": "annotated-types",
     "version": "0.8.0",
     "license": "MIT",
@@ -8,98 +22,84 @@
   },
   {
     "name": "anyio",
-    "version": "4.14.2",
+    "version": "4.16.0",
     "license": "MIT",
     "source": null,
     "modifications": "none"
   },
   {
     "name": "asyncpg",
-    "version": "0.30.0",
+    "version": "0.32.0",
     "license": "Apache-2.0",
     "source": null,
     "modifications": "none"
   },
   {
     "name": "Authlib",
-    "version": "1.3.2",
+    "version": "1.9.9",
     "license": "BSD-3-Clause",
     "source": null,
     "modifications": "none"
   },
   {
-    "name": "cachetools",
-    "version": "5.5.2",
-    "license": "MIT",
-    "source": "https://github.com/tkem/cachetools/",
-    "modifications": "none"
-  },
-  {
     "name": "certifi",
-    "version": "2026.7.22",
+    "version": "2026.10.23",
     "license": "MPL-2.0",
     "source": "https://github.com/certifi/python-certifi",
     "modifications": "none"
   },
   {
     "name": "cffi",
-    "version": "2.1.0",
+    "version": "2.1.1",
     "license": "MIT-0",
     "source": null,
     "modifications": "none"
   },
   {
     "name": "charset-normalizer",
-    "version": "3.4.9",
+    "version": "3.5.2",
     "license": "MIT",
     "source": null,
     "modifications": "none"
   },
   {
     "name": "click",
-    "version": "8.4.2",
+    "version": "8.5.1",
     "license": "BSD-3-Clause",
     "source": null,
     "modifications": "none"
   },
   {
     "name": "cryptography",
-    "version": "49.0.0",
+    "version": "50.0.2",
     "license": "Apache-2.0 OR BSD-3-Clause",
     "source": "https://github.com/pyca/cryptography",
     "modifications": "none"
   },
   {
     "name": "Deprecated",
-    "version": "1.3.1",
+    "version": "3.0.1",
     "license": "MIT",
     "source": "https://github.com/laurent-laporte-pro/deprecated",
     "modifications": "none"
   },
   {
-    "name": "ecdsa",
-    "version": "0.19.2",
-    "license": "MIT",
-    "source": "http://github.com/tlsfuzzer/python-ecdsa",
-    "modifications": "none"
-  },
-  {
     "name": "fastapi",
-    "version": "0.115.14",
+    "version": "0.165.0",
     "license": "MIT",
     "source": "https://github.com/fastapi/fastapi",
     "modifications": "none"
   },
   {
     "name": "google-auth",
-    "version": "2.35.0",
+    "version": "2.62.2",
     "license": "Apache-2.0",
-    "source": "https://github.com/googleapis/google-auth-library-python",
+    "source": "https://github.com/googleapis/google-cloud-python/tree/main/packages/google-auth",
     "modifications": "none"
   },
   {
     "name": "greenlet",
-    "version": "3.5.4",
+    "version": "3.5.6",
     "license": "MIT AND PSF-2.0",
     "source": "https://greenlet.readthedocs.io",
     "modifications": "none"
@@ -120,7 +120,7 @@
   },
   {
     "name": "httptools",
-    "version": "0.8.0",
+    "version": "0.9.0",
     "license": "MIT",
     "source": "https://github.com/MagicStack/httptools",
     "modifications": "none"
@@ -134,7 +134,14 @@
   },
   {
     "name": "idna",
-    "version": "3.18",
+    "version": "3.20",
+    "license": "BSD-3-Clause",
+    "source": null,
+    "modifications": "none"
+  },
+  {
+    "name": "joserfc",
+    "version": "1.8.0",
     "license": "BSD-3-Clause",
     "source": null,
     "modifications": "none"
@@ -144,6 +151,27 @@
     "version": "6.1.3",
     "license": "BSD-3-Clause",
     "source": "https://lxml.de/",
+    "modifications": "none"
+  },
+  {
+    "name": "Mako",
+    "version": "1.4.3",
+    "license": "MIT",
+    "source": "https://www.makotemplates.org/",
+    "modifications": "none"
+  },
+  {
+    "name": "MarkupSafe",
+    "version": "3.0.4",
+    "license": "BSD-3-Clause",
+    "source": null,
+    "modifications": "none"
+  },
+  {
+    "name": "opentelemetry-api",
+    "version": "1.45.2",
+    "license": "Apache-2.0",
+    "source": "https://github.com/open-telemetry/opentelemetry-python/tree/main/opentelemetry-api",
     "modifications": "none"
   },
   {
@@ -162,14 +190,14 @@
   },
   {
     "name": "pillow",
-    "version": "12.3.0",
+    "version": "13.0.0",
     "license": "MIT-CMU",
-    "source": "https://python-pillow.github.io",
+    "source": "https://python-pillow.org",
     "modifications": "none"
   },
   {
     "name": "pyasn1",
-    "version": "0.6.4",
+    "version": "0.6.5",
     "license": "BSD-2-Clause",
     "source": "https://github.com/pyasn1/pyasn1",
     "modifications": "none"
@@ -183,56 +211,56 @@
   },
   {
     "name": "pycparser",
-    "version": "3.0",
+    "version": "3.12",
     "license": "BSD-3-Clause",
     "source": "https://github.com/eliben/pycparser",
     "modifications": "none"
   },
   {
     "name": "pydantic",
-    "version": "2.13.4",
+    "version": "2.14.4",
     "license": "MIT",
     "source": "https://github.com/pydantic/pydantic",
     "modifications": "none"
   },
   {
     "name": "pydantic-settings",
-    "version": "2.6.1",
+    "version": "2.16.3",
     "license": "MIT",
     "source": "https://github.com/pydantic/pydantic-settings",
     "modifications": "none"
   },
   {
     "name": "pydantic_core",
-    "version": "2.46.4",
+    "version": "2.50.5",
     "license": "MIT",
     "source": "https://github.com/pydantic",
     "modifications": "none"
   },
   {
+    "name": "PyJWT",
+    "version": "2.15.1",
+    "license": "MIT",
+    "source": "https://github.com/jpadilla/pyjwt",
+    "modifications": "none"
+  },
+  {
     "name": "pypdf",
-    "version": "5.1.0",
+    "version": "7.1.1",
     "license": "BSD-3-Clause",
     "source": null,
     "modifications": "none"
   },
   {
     "name": "python-dotenv",
-    "version": "1.2.2",
+    "version": "1.2.4",
     "license": "BSD-3-Clause",
     "source": null,
     "modifications": "none"
   },
   {
-    "name": "python-jose",
-    "version": "3.3.0",
-    "license": "MIT",
-    "source": "http://github.com/mpdavis/python-jose",
-    "modifications": "none"
-  },
-  {
     "name": "python-multipart",
-    "version": "0.0.32",
+    "version": "0.0.34",
     "license": "Apache-2.0",
     "source": "https://github.com/Kludex/python-multipart",
     "modifications": "none"
@@ -246,42 +274,28 @@
   },
   {
     "name": "requests",
-    "version": "2.32.5",
+    "version": "2.34.2",
     "license": "Apache-2.0",
-    "source": "https://requests.readthedocs.io",
-    "modifications": "none"
-  },
-  {
-    "name": "rsa",
-    "version": "4.9.1",
-    "license": "Apache-2.0",
-    "source": "https://stuvel.eu/rsa",
-    "modifications": "none"
-  },
-  {
-    "name": "six",
-    "version": "1.17.0",
-    "license": "MIT",
-    "source": "https://github.com/benjaminp/six",
+    "source": null,
     "modifications": "none"
   },
   {
     "name": "SQLAlchemy",
-    "version": "2.0.51",
+    "version": "2.0.58",
     "license": "MIT",
     "source": "https://www.sqlalchemy.org",
     "modifications": "none"
   },
   {
     "name": "starlette",
-    "version": "0.46.2",
+    "version": "1.10.0",
     "license": "BSD-3-Clause",
-    "source": "https://github.com/encode/starlette",
+    "source": "https://github.com/Kludex/starlette",
     "modifications": "none"
   },
   {
     "name": "typing-inspection",
-    "version": "0.4.2",
+    "version": "0.4.5",
     "license": "MIT",
     "source": "https://github.com/pydantic/typing-inspection",
     "modifications": "none"
@@ -295,42 +309,42 @@
   },
   {
     "name": "urllib3",
-    "version": "2.7.0",
+    "version": "2.8.0",
     "license": "MIT",
     "source": null,
     "modifications": "none"
   },
   {
     "name": "uvicorn",
-    "version": "0.32.1",
+    "version": "0.54.0",
     "license": "BSD-3-Clause",
-    "source": "https://www.uvicorn.org/",
+    "source": "https://uvicorn.dev/",
     "modifications": "none"
   },
   {
     "name": "uvloop",
-    "version": "0.22.1",
+    "version": "0.23.0",
     "license": "Apache-2.0",
     "source": null,
     "modifications": "none"
   },
   {
     "name": "watchfiles",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "license": "MIT",
     "source": "https://github.com/samuelcolvin/watchfiles",
     "modifications": "none"
   },
   {
     "name": "websockets",
-    "version": "17.0",
+    "version": "17.4",
     "license": "BSD-3-Clause",
     "source": "https://github.com/python-websockets/websockets",
     "modifications": "none"
   },
   {
     "name": "wrapt",
-    "version": "2.4.0",
+    "version": "2.5.2",
     "license": "BSD-2-Clause",
     "source": "https://github.com/GrahamDumpleton/wrapt",
     "modifications": "none"

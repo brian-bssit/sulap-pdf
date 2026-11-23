@@ -29,7 +29,8 @@ Lisensi langsung (top-level, dari `backend/requirements.txt`):
 | asyncpg | Apache-2.0 |
 | pydantic / pydantic-settings / pydantic-core | MIT |
 | Authlib | BSD-3-Clause |
-| python-jose | MIT |
+| PyJWT | MIT |
+| Alembic (+ Mako, MarkupSafe) | MIT / BSD-3-Clause |
 | pypdf | BSD-3-Clause |
 | python-multipart | Apache-2.0 |
 | httpx, httpcore | BSD-3-Clause |
@@ -37,10 +38,10 @@ Lisensi langsung (top-level, dari `backend/requirements.txt`):
 | requests | Apache-2.0 |
 | **pikepdf** | **MPL-2.0** |
 
-Sebaran lisensi seluruh 48: mayoritas MIT/BSD/Apache-2.0; MPL-2.0: `certifi`, `pikepdf`;
+Sebaran lisensi seluruh 49: mayoritas MIT/BSD/Apache-2.0; MPL-2.0: `certifi`, `pikepdf`;
 PSF/greenlet etc lihat index.json. Tidak ada AGPL/GPL di closure Python.
 
-### 1.2 npm / frontend (30 komponen ter-install)
+### 1.2 npm / frontend (52 komponen, closure produksi dari package-lock.json)
 Daftar lengkap: **`THIRD_PARTY_NOTICES/npm/index.json`**. Termasuk komponen build-time
 (`@next/swc-*` — binary SWC, TIDAK ikut di static `out/`).
 
@@ -49,8 +50,12 @@ Daftar lengkap: **`THIRD_PARTY_NOTICES/npm/index.json`**. Termasuk komponen buil
 | Next.js 14.2.35, React 18.3.1, react-dom, scheduler, styled-jsx, client-only | MIT |
 | axios 1.19.0 | MIT |
 | lucide-react | ISC |
-| pdfjs-dist 4.0.379 | Apache-2.0 |
+| pdfjs-dist 4.10.38 | Apache-2.0 |
 | path2d-polyfill | MIT |
+| @fontsource-variable/plus-jakarta-sans 5.3.0 (font UI, self-host) | OFL-1.1 (paket MIT-licensed wrapper; teks OFL di `THIRD_PARTY_NOTICES/_licenses/OFL-1.1.txt`) |
+| busboy, streamsearch | MIT (field `license` kosong di package.json; teks di berkas LICENSE) |
+
+`frontend/scripts/gen-npm-sbom.sh` kini menghitung closure produksi dari `package-lock.json` karena `npm sbom --omit=dev` melewatkan paket yang juga dipakai devDependency (22 paket sebelumnya tak tercatat).
 
 ### 1.3 Sistem / Docker image
 | Komponen | Versi (bookworm) | Lisensi | File |
@@ -62,7 +67,7 @@ Daftar lengkap: **`THIRD_PARTY_NOTICES/npm/index.json`**. Termasuk komponen buil
 | curl | 7.88.1-10+deb12u5 | curl (MIT-style) | `system/curl.md` |
 
 ### 1.4 pdf.js worker
-pdfjs-dist 4.0.379, Apache-2.0, © Mozilla Foundation. → `pdfjs/index.json` + `pdfjs/LICENSE-Apache-2.0.txt`.
+pdfjs-dist 4.10.38, Apache-2.0, © Mozilla Foundation. → `pdfjs/index.json` + `pdfjs/LICENSE-Apache-2.0.txt`.
 
 ### 1.5 Fonts di-embed (Edit PDF)
 | Komponen | Versi | Lisensi | File |

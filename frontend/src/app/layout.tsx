@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import "@fontsource-variable/plus-jakarta-sans";
 import "./globals.css";
+import { t } from "@/lib/strings";
 
 export const metadata: Metadata = {
-  title: "SULAP PDF — Solusi Universal, Lengkap, Aman, Proses PDF",
-  description: "SULAP PDF — Solusi Universal, Lengkap, Aman, Proses PDF. Internal tool Bank Sahabat Sampoerna.",
+  title: `${t.app.name} — ${t.app.tagline}`,
+  description: `${t.app.name} — ${t.app.tagline}. ${t.app.internal}.`,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

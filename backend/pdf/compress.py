@@ -4,7 +4,7 @@ import uuid
 import logging
 from pathlib import Path
 
-from fastapi import APIRouter, Request, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Request, Depends, Form, HTTPException, UploadFile, File
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,12 +13,20 @@ from db.database import get_db
 from auth.dependencies import get_current_user
 from audit import log_audit
 from pdf.dl_headers import attachment_filename
+from pdf.errors import raise_if_encrypted
+from pdf.upload import save_upload
 
 logger = logging.getLogger("cloudpdf")
 
 router = APIRouter()
 
-_QPDF_ARGS = ["--recompress-flate", "--compression-level=9", "--object-streams=generate"]
+# Semua level LOSSLESS (qpdf tak mengubah kualitas gambar). Level hanya menukar kecepatan vs ukuran.
+# "high" = perilaku lama (default bila klien tak mengirim `level`).
+_LEVEL_ARGS = {
+    "low": ["--recompress-flate", "--compression-level=3"],
+    "balanced": ["--recompress-flate", "--compression-level=6", "--object-streams=generate"],
+    "high": ["--linearize", "--recompress-flate", "--compression-level=9", "--object-streams=generate"],
+}
 
 PDF_MAGIC = b"%PDF"
 
@@ -38,9 +46,12 @@ def _validate_pdf(path_str: str, max_size_mb: int) -> int:
 async def compress_pdf(
     request: Request,
     file: UploadFile = File(...),
+    level: str = Form("high"),
     db: AsyncSession = Depends(get_db),
     user=Depends(get_current_user),
 ):
+    if level not in _LEVEL_ARGS:
+        raise HTTPException(status_code=400, detail="level harus low, balanced, atau high")
 
     job_id = str(uuid.uuid4())[:8]
     input_path = Path(f"/tmp/cpdf_{job_id}_input.pdf")
@@ -49,18 +60,17 @@ async def compress_pdf(
     input_size = 0
 
     try:
-        content = await file.read()
-        input_path.write_bytes(content)
-        del content
+        await save_upload(file, input_path, settings.max_file_size_mb * 1024 * 1024)
 
         input_size = _validate_pdf(str(input_path), settings.max_file_size_mb)
+        await raise_if_encrypted(input_path)
 
         if await request.is_disconnected():
             await _audit(db, request, user, file, input_size, 0, "CANCELLED_BY_CLIENT")
             _cleanup(input_path, output_path)
             return StreamingResponse(iter([]), status_code=499)
 
-        cmd = ["qpdf", "--linearize", *_QPDF_ARGS, str(input_path), str(output_path)]
+        cmd = ["qpdf", *_LEVEL_ARGS[level], str(input_path), str(output_path)]
 
         process = await asyncio.create_subprocess_exec(
             *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
@@ -76,10 +86,18 @@ async def compress_pdf(
         # qpdf exit codes: 0=OK, 1/2=error, 3=OK with warnings
         if process.returncode not in (0, 3):
             stderr = (await process.stderr.read()).decode("utf-8", errors="replace")[:500] if process.stderr else ""
-            raise HTTPException(status_code=422, detail=f"PDF tidak bisa diproses: {stderr}")
+            # Detail teknis (path /tmp, versi qpdf) hanya ke log — jangan ke user.
+            logger.warning(f"qpdf gagal job={job_id} rc={process.returncode}: {stderr}")
+            raise HTTPException(status_code=422, detail="PDF tidak bisa diproses. File mungkin rusak.")
 
         output_data = output_path.read_bytes()
         output_size = len(output_data)
+        # Lossless tak selalu mengecilkan (PDF kecil/sudah optimal bisa membesar karena overhead
+        # linearize/xref). Jangan kembalikan hasil yang lebih besar: pakai berkas asli.
+        unchanged = output_size >= input_size
+        if unchanged:
+            output_data = input_path.read_bytes()
+            output_size = input_size
         processing_ms = int((time.monotonic() - start_time) * 1000)
 
         await _audit(db, request, user, file, input_size, output_size, "SUCCESS", processing_ms)
@@ -96,6 +114,7 @@ async def compress_pdf(
                 "Content-Disposition": attachment_filename(output_filename),
                 "X-Original-Size": str(input_size),
                 "X-Compressed-Size": str(output_size),
+                "X-Compression": "unchanged" if unchanged else "reduced",
             },
         )
 

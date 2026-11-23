@@ -1,4 +1,4 @@
-# Cloud Build — SULAP (CloudPDF Toolkit)
+# Cloud Build — SULAP PDF
 # Docker build → Artifact Registry → Cloud Run deploy
 #
 # Secrets in Secret Manager:
@@ -48,7 +48,7 @@ steps:
       - '1'
       - '--allow-unauthenticated'
       - '--set-env-vars'
-      - 'LOG_LEVEL=INFO,MAX_FILE_SIZE_MB=30,MAX_PAGES_REARRANGE=200,ENVIRONMENT=production'
+      - 'LOG_LEVEL=INFO,MAX_FILE_SIZE_MB=30,MAX_PAGES_REARRANGE=200,ENVIRONMENT=production,ALLOWED_EMAIL_DOMAINS=banksampoerna.com'
       - '--set-secrets'
       - 'DATABASE_URL=sulap-db-url:latest,SECRET_KEY=sulap-jwt-secret:latest,GOOGLE_CLIENT_ID=sulap-google-id:latest,FRONTEND_URL=sulap-frontend-url:latest'
 

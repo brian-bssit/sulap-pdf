@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
     # App
-    app_name: str = "CloudPDF Toolkit"
+    app_name: str = "SULAP PDF"
     log_level: str = "INFO"
     frontend_url: str = "http://localhost:8080"
     # environment ∈ {development, test, production} — menyalakan fail-fast secret
@@ -22,17 +22,25 @@ class Settings(BaseSettings):
 
     # JWT
     secret_key: str = DEFAULT_SECRET_KEY
-    jwt_expiry_days: int = 7
+    jwt_expiry_hours: int = 8  # batas absolut sesi
+    idle_timeout_seconds: int = 600  # sesi berakhir bila tak ada aktivitas (checklist: 10 menit)
 
     # Google OAuth
     google_client_id: str = ""
     google_client_secret: str = ""
+    # Domain email yang boleh login, pisah koma (mis. "banksampoerna.com").
+    # Kosong = tanpa batas (hanya boleh di non-production).
+    allowed_email_domains: str = ""
 
     # PDF
     max_file_size_mb: int = 30
     request_timeout_seconds: int = 600
     max_pages_rearrange: int = 200
     max_pages_edit: int = 200
+
+    # Rate limit / kuota per user (dihitung dari audit_logs; 0 = nonaktif)
+    rate_limit_per_min: int = 10
+    quota_per_day: int = 200
 
     # Cleanup
     cleanup_interval_seconds: int = 300
@@ -47,7 +55,16 @@ class Settings(BaseSettings):
             raise ValueError(
                 "SECRET_KEY wajib di-set (bukan default) saat environment=production"
             )
+        # Tanpa allowlist, akun Google mana pun bisa login → tolak start.
+        if self.environment == "production" and not self.allowed_domains:
+            raise ValueError(
+                "ALLOWED_EMAIL_DOMAINS wajib di-set saat environment=production"
+            )
         return self
+
+    @property
+    def allowed_domains(self) -> set[str]:
+        return {d.strip().lower() for d in self.allowed_email_domains.split(",") if d.strip()}
 
 
 settings = Settings()

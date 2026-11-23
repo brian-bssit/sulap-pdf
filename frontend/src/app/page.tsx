@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/lib/strings";
 import { useCallback, useEffect, useState } from "react";
 
 const GOOGLE_CLIENT_SCRIPT = "https://accounts.google.com/gsi/client";
@@ -36,13 +37,18 @@ export default function LoginPage() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        setAuthError(data?.detail || "Google sign-in gagal. Coba lagi.");
+        setAuthError(data?.detail || t.login.failed);
         return;
       }
       window.location.href = "/dashboard";
     } catch {
-      setAuthError("Tidak dapat menghubungi server. Coba lagi.");
+      setAuthError(t.login.network);
     }
+  }, []);
+
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get("error");
+    if (code) setAuthError(t.login.errors[code] ?? t.login.failed);
   }, []);
 
   useEffect(() => {
@@ -93,17 +99,15 @@ export default function LoginPage() {
       style={{ background: "linear-gradient(135deg, #0F1F4B, #183A82)" }}
     >
       <div
-        className="w-full bg-white rounded-3xl shadow-2xl"
-        style={{ maxWidth: 440, boxShadow: "0 25px 60px rgba(0,0,0,.25)" }}
+        className="w-full rounded-3xl shadow-2xl"
+        style={{ maxWidth: 440, background: "#FBFBFA", boxShadow: "0 25px 60px rgba(0,0,0,.25)" }}
       >
         <div className="px-8 py-6 sm:px-10 sm:py-8">
           {/* Logo + SULAP */}
           <main className="flex flex-col items-center justify-center mb-6">
-            <img src="/bss-logo.png" alt="Bank Sahabat Sampoerna" className="h-36 w-auto mb-1" />
-            <h1 className="text-[36px] font-bold text-[#0F2D6C]">SULAP PDF</h1>
-            <p className="text-sm text-[#5E6980] mt-2 text-center">
-              Solusi Universal, Lengkap, Aman, Proses PDF
-            </p>
+            <img src="/bss-logo.png" alt={t.login.bank} className="h-36 w-auto mb-1" />
+            <h1 className="text-[36px] font-bold text-[#0F2D6C]">{t.app.name}</h1>
+            <p className="text-sm text-[#5E6980] mt-2 text-center">{t.app.tagline}</p>
           </main>
 
           {/* Google Sign-In (GIS-rendered button) */}
@@ -121,16 +125,10 @@ export default function LoginPage() {
             style={{ background: "#F7FAFF", border: "1px solid #DCE5F5" }}
           >
             <h3 className="text-[#17397D] mb-3 text-base font-bold">
-              Pernyataan Keamanan & Privasi
+              {t.login.noticeTitle}
             </h3>
-            <p className="text-[#5E6980] leading-relaxed text-sm">
-              File PDF diproses secara aman di server dan dihapus segera setelah selesai.
-              Tidak ada dokumen yang disimpan secara permanen.
-              Setiap aktivitas tercatat dalam audit log.
-            </p>
-            <strong className="block mt-4 text-[#D63031] text-base">
-              NO more I LOVE PDF / SMALL PDF
-            </strong>
+            <p className="text-[#5E6980] leading-relaxed text-sm">{t.security.body}</p>
+            <strong className="block mt-4 text-[#D63031] text-base">{t.security.slogan}</strong>
           </div>
         </div>
       </div>

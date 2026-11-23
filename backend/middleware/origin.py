@@ -1,6 +1,12 @@
+import asyncio
+import shutil
+
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
 from starlette.middleware.base import BaseHTTPMiddleware
+
+from db.database import engine
 
 router = APIRouter()
 
@@ -9,6 +15,31 @@ router = APIRouter()
 async def health_check():
     """Cloud Run health check. Liveness only — no DB dep."""
     return {"status": "UP"}
+
+
+async def _db_ok() -> bool:
+    try:
+        async with engine.connect() as conn:
+            await asyncio.wait_for(conn.execute(text("SELECT 1")), timeout=3)
+        return True
+    except Exception:
+        return False
+
+
+@router.get("/ready")
+async def readiness():
+    """Siap melayani: DB terjangkau + binary pemroses ada di image. Hanya boolean (tanpa detail
+    internal). 503 bila ada yang gagal. Liveness tetap /health (tanpa dependensi)."""
+    checks = {
+        "db": await _db_ok(),
+        "qpdf": shutil.which("qpdf") is not None,
+        "libreoffice": (shutil.which("soffice") or shutil.which("libreoffice")) is not None,
+    }
+    ok = all(checks.values())
+    return JSONResponse(
+        status_code=200 if ok else 503,
+        content={"status": "READY" if ok else "NOT_READY", "checks": checks},
+    )
 
 
 class OriginCheckMiddleware(BaseHTTPMiddleware):

@@ -12,7 +12,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config import settings
 from db.database import get_db
 from db.queries import get_user_by_google_sub, create_user, update_last_login
-from auth.jwt import create_token
+from auth import roles
+from auth.session import issue_token
+from auth.domain import check_identity
 from audit import log_audit
 
 try:
@@ -76,7 +78,7 @@ def _set_jwt_cookie(response, token: str):
         secure=settings.frontend_url.startswith("https"),
         samesite="strict",
         path="/api",
-        max_age=settings.jwt_expiry_days * 86400,
+        max_age=settings.jwt_expiry_hours * 3600,
     )
 
 
@@ -115,6 +117,12 @@ async def google_callback(request: Request, db: AsyncSession = Depends(get_db)):
             logger.error("Google userinfo missing sub or email")
             return RedirectResponse(url=f"{settings.frontend_url}/?error=auth_failed")
 
+        try:
+            check_identity(email, userinfo.get("email_verified"), userinfo.get("hd"))
+        except HTTPException as e:
+            await log_audit(db, request, None, email, "GOOGLE_LOGIN", status="FAILED", error_message=str(e.detail))
+            return RedirectResponse(url=f"{settings.frontend_url}/?error=domain_not_allowed")
+
         user = await get_user_by_google_sub(db, google_sub)
         is_new = user is None
 
@@ -132,7 +140,7 @@ async def google_callback(request: Request, db: AsyncSession = Depends(get_db)):
             status="SUCCESS",
         )
 
-        jwt_token = create_token(str(user.id), user.email)
+        jwt_token = await issue_token(db, request, user)
         response = RedirectResponse(url="/dashboard")
         _set_jwt_cookie(response, jwt_token)
         return response
@@ -150,9 +158,11 @@ async def dev_login(request: Request, db: AsyncSession = Depends(get_db)):
     if not settings.dev_login_enabled:
         raise HTTPException(status_code=404, detail="Not available")
 
-    dev_email = request.query_params.get("email", "dev@cloudpdf.local")
+    dev_email = request.query_params.get("email", "dev@sulap.local")
     dev_name = request.query_params.get("name", "Dev User")
     dev_role = request.query_params.get("role", "user")
+    if dev_role not in roles.ALL_ROLES:
+        raise HTTPException(status_code=400, detail="Role tidak dikenal")
     dev_sub = f"dev-{dev_email}"
 
     user = await get_user_by_google_sub(db, dev_sub)
@@ -181,7 +191,7 @@ async def dev_login(request: Request, db: AsyncSession = Depends(get_db)):
         status="SUCCESS",
     )
 
-    jwt_token = create_token(str(user.id), user.email)
+    jwt_token = await issue_token(db, request, user)
     response = RedirectResponse(url="/dashboard")
     _set_jwt_cookie(response, jwt_token)
     return response
@@ -223,6 +233,12 @@ async def google_token_login(request: Request, db: AsyncSession = Depends(get_db
     if not sub or not email:
         raise HTTPException(status_code=401, detail="Google authentication failed")
 
+    try:
+        check_identity(email, info.get("email_verified"), info.get("hd"))
+    except HTTPException as e:
+        await log_audit(db, request, None, email, "GOOGLE_LOGIN", status="FAILED", error_message=str(e.detail))
+        raise
+
     display_name = info.get("name") or email.split("@")[0]
 
     user = await get_user_by_google_sub(db, sub)
@@ -234,7 +250,7 @@ async def google_token_login(request: Request, db: AsyncSession = Depends(get_db
 
     await log_audit(db, request, str(user.id), user.email, "GOOGLE_LOGIN", status="SUCCESS")
 
-    token = create_token(str(user.id), user.email)
+    token = await issue_token(db, request, user)
     response = JSONResponse(
         {"user": {"name": user.display_name, "email": user.email, "role": user.role}}
     )

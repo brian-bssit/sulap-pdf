@@ -1,5 +1,8 @@
 import asyncio
+import os
+import resource
 import shutil
+import signal
 import time
 import uuid
 import logging
@@ -14,6 +17,7 @@ from db.database import get_db
 from auth.dependencies import get_current_user
 from audit import log_audit
 from pdf.dl_headers import attachment_filename
+from pdf.upload import save_upload
 
 logger = logging.getLogger("cloudpdf")
 
@@ -21,6 +25,35 @@ router = APIRouter()
 
 # soffice (macOS/universal) preferred, libreoffice (Linux wrapper) fallback
 _LIBREOFFICE_BIN = "soffice" if shutil.which("soffice") else "libreoffice"
+
+# Profil LO per-job di-seed: makro dimatikan total (level 3 + disable), link eksternal
+# tak di-update saat load (Link: 0=Always 1=On request 2=Never; Writer & Calc).
+# Kunci diverifikasi terhadap registry/main.xcd LibreOffice terpasang.
+_LO_XCU = """<?xml version="1.0" encoding="UTF-8"?>
+<oor:items xmlns:oor="http://openoffice.org/2001/registry" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<item oor:path="/org.openoffice.Office.Common/Security/Scripting"><prop oor:name="MacroSecurityLevel" oor:op="fuse"><value>3</value></prop></item>
+<item oor:path="/org.openoffice.Office.Common/Security/Scripting"><prop oor:name="DisableMacrosExecution" oor:op="fuse"><value>true</value></prop></item>
+<item oor:path="/org.openoffice.Office.Writer/Content/Update"><prop oor:name="Link" oor:op="fuse"><value>2</value></prop></item>
+<item oor:path="/org.openoffice.Office.Calc/Content/Update"><prop oor:name="Link" oor:op="fuse"><value>2</value></prop></item>
+</oor:items>
+"""
+
+_FSIZE_LIMIT = 200 * 1024 * 1024
+
+
+def _seed_lo_profile(lo_profile: Path) -> None:
+    user_dir = lo_profile / "user"
+    user_dir.mkdir(parents=True, exist_ok=True)
+    (user_dir / "registrymodifications.xcu").write_text(_LO_XCU, encoding="utf-8")
+
+
+def _child_limits() -> None:
+    """Dipanggil di child sebelum exec. CPU = batas wall-clock request; file output ≤ 200 MiB.
+    RLIMIT_AS sengaja TIDAK dipasang: LibreOffice memetakan banyak memori virtual dan
+    crash bila dibatasi; memori sudah dibatasi cgroup Cloud Run (4 GiB)."""
+    cpu = settings.request_timeout_seconds
+    resource.setrlimit(resource.RLIMIT_CPU, (cpu, cpu))
+    resource.setrlimit(resource.RLIMIT_FSIZE, (_FSIZE_LIMIT, _FSIZE_LIMIT))
 
 
 def _build_convert_cmd(lo_profile: Path, input_path: Path) -> list[str]:
@@ -117,41 +150,52 @@ async def convert_to_pdf(
     input_size = 0
 
     try:
-        content = await file.read()
-        input_size = len(content)
-
-        if input_size > settings.max_file_size_mb * 1024 * 1024:
-            raise HTTPException(status_code=413, detail=f"File terlalu besar. Maksimal {settings.max_file_size_mb} MB")
+        input_size = await save_upload(file, input_path, settings.max_file_size_mb * 1024 * 1024)
 
         if input_size == 0:
             raise HTTPException(status_code=400, detail="File kosong")
-
-        input_path.write_bytes(content)
-        del content
 
         if await request.is_disconnected():
             await _audit(db, request, user, file, input_size, 0, "CANCELLED_BY_CLIENT")
             _cleanup(input_path, output_path, lo_profile)
             return StreamingResponse(iter([]), status_code=499)
 
+        _seed_lo_profile(lo_profile)
         cmd = _build_convert_cmd(lo_profile, input_path)
 
+        # Sesi baru → seluruh pohon proses (wrapper soffice + soffice.bin) bisa dibunuh sekaligus.
         process = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
+            start_new_session=True,
+            preexec_fn=_child_limits,
         )
 
         try:
-            await asyncio.wait_for(process.wait(), timeout=settings.request_timeout_seconds - 10)
+            # communicate() menguras pipe; wait() bisa deadlock bila keluaran > buffer pipe.
+            _, stderr_bytes = await asyncio.wait_for(
+                process.communicate(), timeout=settings.request_timeout_seconds - 10
+            )
         except asyncio.TimeoutError:
-            process.kill()
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
             await process.wait()
             raise HTTPException(status_code=504, detail="Proses timeout. Coba file lebih kecil")
+        finally:
+            # Anak yang tersisa setelah wrapper keluar tidak boleh yatim.
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except (ProcessLookupError, PermissionError):
+                pass
 
         if process.returncode != 0:
-            stderr = (await process.stderr.read()).decode("utf-8", errors="replace")[:500] if process.stderr else ""
-            raise HTTPException(status_code=422, detail=f"Dokumen tidak bisa dikonversi: {stderr}")
+            stderr = stderr_bytes.decode("utf-8", errors="replace")[:500]
+            # Detail teknis (path /tmp, argumen soffice) hanya ke log — jangan ke user.
+            logger.warning(f"soffice gagal job={job_id} rc={process.returncode}: {stderr}")
+            raise HTTPException(status_code=422, detail="Dokumen tidak bisa dikonversi. File mungkin rusak atau formatnya tidak didukung.")
 
         if not output_path.exists() or output_path.stat().st_size == 0:
             raise HTTPException(status_code=422, detail="Konversi gagal — file output kosong")

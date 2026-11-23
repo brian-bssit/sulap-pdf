@@ -13,7 +13,44 @@ python3 - "$ROOT" <<'PY'
 import json, re, shutil, sys
 from pathlib import Path
 root = Path(sys.argv[1]); NM = root/"frontend"/"node_modules"
-sbom = json.load(open(root/"docs/sbom/npm-cyclonedx.json"))
+sbom_path = root/"docs/sbom/npm-cyclonedx.json"
+sbom = json.load(open(sbom_path))
+
+# `npm sbom --omit=dev` tak andal: paket produksi yang juga dipakai devDependency (mis. form-data via
+# axios + jsdom) bisa hilang dari hasilnya. Closure produksi dihitung ulang dari package-lock.json
+# dan komponen yang kurang ditambahkan, supaya SBOM/NOTICES tidak under-report.
+lock = json.load(open(root/"frontend"/"package-lock.json"))["packages"]
+def resolve(name, frm):
+    base = frm
+    while True:
+        key = (base + "/" if base else "") + "node_modules/" + name
+        if key in lock:
+            return key
+        if not base:
+            return None
+        base = base.rsplit("/node_modules/", 1)[0] if "/node_modules/" in base else ""
+closure, stack = set(), [resolve(n, "") for n in lock[""].get("dependencies", {})]
+while stack:
+    k = stack.pop()
+    if not k or k in closure:
+        continue
+    # dependency opsional yang tak terpasang (mis. `canvas`, Node-only, dari pdfjs-dist) bukan bagian artefak
+    if lock[k].get("optional") and not (root/"frontend"/k/"package.json").exists():
+        continue
+    closure.add(k)
+    meta = lock[k]
+    for n in {**meta.get("dependencies", {}), **meta.get("optionalDependencies", {})}:
+        stack.append(resolve(n, k))
+have = {c["name"] for c in sbom["components"]}
+added = []
+for k in sorted(closure):
+    nm = k.split("node_modules/")[-1]
+    if nm not in have and (NM/nm/"package.json").exists():
+        sbom["components"].append({"type": "library", "name": nm, "version": lock[k]["version"], "purl": f"pkg:npm/{nm.replace('@', '%40', 1)}@{lock[k]['version']}"})
+        added.append(nm)
+if added:
+    print("npm sbom melewatkan (ditambahkan dari package-lock):", ", ".join(added))
+    json.dump(sbom, open(sbom_path, "w"), indent=2)
 out = root/"THIRD_PARTY_NOTICES"/"npm"
 shutil.rmtree(out, ignore_errors=True); out.mkdir(parents=True)
 clean = lambda n: re.sub(r"[^A-Za-z0-9_.-]", "_", n)

@@ -1,8 +1,8 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
-from sqlalchemy import String, Boolean, DateTime, Text, BigInteger, Integer, ARRAY, Float
-from sqlalchemy.dialects.postgresql import UUID, INET
+from sqlalchemy import String, Boolean, DateTime, Text, BigInteger, Integer, ARRAY, Float, ForeignKey, Index, text
+from sqlalchemy.dialects.postgresql import UUID, INET, JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -21,11 +21,16 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(20), default="user")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    # Sesi aktif tunggal + aktivitas terakhir (lihat auth/session.py)
+    session_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"
+    # Kuota per user menghitung baris per jendela waktu.
+    __table_args__ = (Index("ix_audit_user_executed", "user_id", "executed_at"),)
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
@@ -40,4 +45,27 @@ class AuditLog(Base):
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     ip_address: Mapped[str | None] = mapped_column(INET, nullable=True)
     user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
-    executed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, index=True)
+    detail: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    executed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+
+
+class RoleChangeRequest(Base):
+    """Pengajuan perubahan role (dual control): IT DCA Officer mengajukan, IT DCA Supervisor/Super Admin memutuskan."""
+
+    __tablename__ = "role_change_requests"
+    __table_args__ = (
+        # Satu pengajuan aktif per target (juga menahan balapan dua pengajuan bersamaan).
+        Index("ux_rcr_pending_target", "target_user_id", unique=True, postgresql_where=text("status = 'PENDING'")),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    target_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    from_role: Mapped[str] = mapped_column(String(20), nullable=False)
+    to_role: Mapped[str] = mapped_column(String(20), nullable=False)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    requested_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    status: Mapped[str] = mapped_column(String(12), nullable=False)  # PENDING | APPROVED | REJECTED | CANCELLED
+    decided_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    decision_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
