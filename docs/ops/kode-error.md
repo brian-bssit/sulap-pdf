@@ -17,7 +17,11 @@
 | 401 | "Sesi tidak valid. Silakan login ulang." (`SESSION_INVALID`) | Token lama tanpa penanda sesi | Login ulang |
 | 401 | "Google authentication failed" | Token Google tidak valid / email belum terverifikasi | Coba login lagi |
 | 403 | "Akun tidak diizinkan. Gunakan email korporat." | Email di luar domain yang diizinkan | Pakai akun korporat |
-| 403 | "Akses auditor atau admin diperlukan" / "Admin access required" | Role tidak cukup | Hubungi admin |
+| 403 | "Anda tidak memiliki akses untuk fungsi ini" | Role tidak cukup | Hubungi admin |
+| 403 | "Pengaju tidak boleh menyetujui pengajuannya sendiri" / "Hanya pengaju atau Super Admin yang dapat membatalkan" | Aturan maker–approver | Minta Supervisor/Super Admin lain |
+| 403 | "Pemberian Super Admin hanya dapat dilakukan oleh Super Admin" / "Role Super Admin hanya dapat diubah oleh Super Admin" | Batas wewenang Officer | Minta Super Admin |
+| 400 | "Perubahan ditolak: sistem harus selalu punya…" | Invarian peran admin | Lihat runbook |
+| 409 | "Sudah ada pengajuan yang menunggu keputusan untuk user ini" / "Pengajuan sudah diputuskan" / "Role target sudah berubah…" | Pengajuan ganda/basi | Muat ulang daftar pengajuan |
 | 403 | "Origin not allowed" | Permintaan lintas-origin | Akses lewat URL resmi |
 | 404 | (tanpa isi) | Halaman tidak ada / jalur di luar situs | – |
 | 413 | "File terlalu besar. Maksimal 30 MB" / "Total file > 30MB" / "Ukuran request terlalu besar" | Melebihi batas ukuran | Kompres atau pecah file |
@@ -31,4 +35,4 @@
 | 504 | "Proses timeout. Coba file lebih kecil" | Proses melebihi batas waktu | Kecilkan file |
 
 Status audit: `SUCCESS`, `FAILED`, `CANCELLED_BY_CLIENT`. Aksi: `COMPRESS`, `MERGE`, `REARRANGE`, `REMOVE_PAGES`, `CONVERT`,
-`EDIT_OVERLAY`, `GOOGLE_LOGIN`, `LOGOUT` (`detail.reason=idle` bila dipaksa idle), `SESSION_REPLACED`, `SESSION_IDLE_EXPIRED`, `USER_ROLE_CHANGE`, `RATE_LIMITED`.
+`EDIT_OVERLAY`, `GOOGLE_LOGIN`, `LOGOUT` (`detail.reason=idle` bila dipaksa idle), `SESSION_REPLACED`, `SESSION_IDLE_EXPIRED`, `ROLE_CHANGE_REQUESTED/APPROVED/REJECTED/CANCELLED`, `USER_ROLE_CHANGE`, `RATE_LIMITED`.

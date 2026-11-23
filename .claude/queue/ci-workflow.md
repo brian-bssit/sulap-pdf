@@ -59,3 +59,7 @@ informatif atau abaikan advisory Next sampai upgrade mayor dikerjakan (`security
 
 Catatan: pin action ke SHA bila kebijakan bank mensyaratkan. `audit` bisa merah karena CVE
 upstream; putuskan apakah wajib (required) atau informatif.
+
+Tambahan job `backend-db` (tes Postgres dual control, `backend/tests/db`): service `postgres:16`, env
+`TEST_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/test`, lalu
+`PYTHONPATH=. python -m pytest -q tests/db`. DB diisi ulang tiap tes (jangan diarahkan ke DB berisi data).

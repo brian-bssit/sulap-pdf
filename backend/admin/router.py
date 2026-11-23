@@ -3,6 +3,7 @@ import io
 import uuid
 from datetime import datetime, timedelta
 
+from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, Query, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select, update
@@ -11,8 +12,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db.database import get_db
 from db.models import User
 from db.queries import get_audit_logs
-from auth.dependencies import get_current_admin_user, get_current_auditor_or_admin
-from audit import log_audit
+from auth import roles
+from auth.dependencies import get_admin_viewer, get_role_approver, get_role_requester, get_super_admin
+from admin import role_service
+from db.models import RoleChangeRequest
 
 router = APIRouter()
 
@@ -42,7 +45,7 @@ def _uuid_or_none_400(user_id: str | None) -> uuid.UUID | None:
 @router.get("/users")
 async def list_users(
     db: AsyncSession = Depends(get_db),
-    viewer=Depends(get_current_auditor_or_admin),
+    viewer=Depends(get_admin_viewer),
     page: int = Query(1, ge=1),
     per_page: int = Query(200, ge=1, le=500),
 ):
@@ -72,7 +75,7 @@ async def list_users(
 @router.get("/users/csv")
 async def export_users_csv(
     db: AsyncSession = Depends(get_db),
-    viewer=Depends(get_current_auditor_or_admin),
+    viewer=Depends(get_admin_viewer),
 ):
     """Ekspor daftar user (bahan review akses tahunan): email, nama, role, status, login terakhir, dibuat."""
     users = (await db.execute(select(User).order_by(User.email))).scalars().all()
@@ -96,41 +99,78 @@ async def export_users_csv(
 async def upgrade_user_role(
     request: Request,
     user_id: str,
-    role: str = Query(..., pattern="^(admin|auditor|user)$"),
+    role: str = Query(..., description="Salah satu dari: " + ", ".join(roles.ALL_ROLES)),
     db: AsyncSession = Depends(get_db),
-    admin=Depends(get_current_admin_user),
+    actor=Depends(get_super_admin),
 ):
-    """Ubah role user (admin | auditor | user). Admin only; tercatat di audit log."""
-    uid = _uuid_or_400(user_id)
-    user = (await db.execute(select(User).where(User.id == uid))).scalar_one_or_none()
-    if user is None:
-        raise HTTPException(status_code=404, detail="User tidak ditemukan")
+    """Ubah role LANGSUNG (tanpa dual control). Hanya Super Admin; invarian peran admin tetap diperiksa."""
+    return await role_service.apply_direct(db, request, actor, _uuid_or_400(user_id), role)
 
-    old_role = user.role
-    if old_role == role:
-        return {"status": "ok", "user_id": user_id, "role": role}
 
-    if old_role == "admin":
-        admin_count = (
-            await db.execute(
-                select(func.count()).select_from(User).where(
-                    User.role == "admin", User.is_active.is_(True)
-                )
-            )
-        ).scalar_one()
-        if admin_count <= 1:
-            raise HTTPException(
-                status_code=400, detail="Tidak bisa menurunkan admin terakhir yang aktif"
-            )
+# ── Pengajuan perubahan role (dual control) ──
 
-    target_email = user.email
-    await db.execute(update(User).where(User.id == uid).values(role=role))
-    await db.commit()
-    await log_audit(
-        db, request, str(admin.id), admin.email, "USER_ROLE_CHANGE",
-        detail={"target_id": user_id, "target_email": target_email, "from": old_role, "to": role},
-    )
-    return {"status": "ok", "user_id": user_id, "role": role}
+class RoleRequestIn(BaseModel):
+    user_id: str
+    role: str
+    reason: str | None = Field(default=None, max_length=1000)
+
+
+class DecisionIn(BaseModel):
+    note: str | None = Field(default=None, max_length=1000)
+
+
+async def _emails(db: AsyncSession, reqs: list[RoleChangeRequest]) -> dict:
+    ids = {r.target_user_id for r in reqs} | {r.requested_by for r in reqs} | {r.decided_by for r in reqs if r.decided_by}
+    rows = (await db.execute(select(User.id, User.email).where(User.id.in_(ids)))).all() if ids else []
+    return {i: e for i, e in rows}
+
+
+@router.get("/role-requests")
+async def list_role_requests(
+    status: str | None = Query(None, pattern="^(PENDING|APPROVED|REJECTED|CANCELLED)$"),
+    db: AsyncSession = Depends(get_db),
+    viewer=Depends(get_admin_viewer),
+):
+    q = select(RoleChangeRequest).order_by(RoleChangeRequest.created_at.desc()).limit(200)
+    if status:
+        q = q.where(RoleChangeRequest.status == status)
+    reqs = (await db.execute(q)).scalars().all()
+    emails = await _emails(db, list(reqs))
+    return {"data": [role_service.serialize(r, emails) for r in reqs]}
+
+
+@router.post("/role-requests", status_code=201)
+async def create_role_request(
+    request: Request, body: RoleRequestIn, db: AsyncSession = Depends(get_db), requester=Depends(get_role_requester)
+):
+    req = await role_service.create_request(db, request, requester, _uuid_or_400(body.user_id), body.role, body.reason)
+    return role_service.serialize(req, await _emails(db, [req]))
+
+
+@router.post("/role-requests/{request_id}/approve")
+async def approve_role_request(
+    request: Request, request_id: str, body: DecisionIn | None = None,
+    db: AsyncSession = Depends(get_db), approver=Depends(get_role_approver),
+):
+    req = await role_service.approve(db, request, approver, _uuid_or_400(request_id), body.note if body else None)
+    return role_service.serialize(req, await _emails(db, [req]))
+
+
+@router.post("/role-requests/{request_id}/reject")
+async def reject_role_request(
+    request: Request, request_id: str, body: DecisionIn | None = None,
+    db: AsyncSession = Depends(get_db), approver=Depends(get_role_approver),
+):
+    req = await role_service.reject(db, request, approver, _uuid_or_400(request_id), body.note if body else None)
+    return role_service.serialize(req, await _emails(db, [req]))
+
+
+@router.post("/role-requests/{request_id}/cancel")
+async def cancel_role_request(
+    request: Request, request_id: str, db: AsyncSession = Depends(get_db), actor=Depends(get_admin_viewer),
+):
+    req = await role_service.cancel(db, request, actor, _uuid_or_400(request_id))
+    return role_service.serialize(req, await _emails(db, [req]))
 
 
 # ── Audit Logs ──
@@ -147,7 +187,7 @@ async def list_audit_logs(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    user=Depends(get_current_auditor_or_admin),
+    user=Depends(get_admin_viewer),
 ):
     """Paginated audit log list with filters."""
     uid = _uuid_or_none_400(user_id)
@@ -186,7 +226,7 @@ async def export_audit_logs_csv(
     date_from: str | None = Query(None),
     date_to: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
-    user=Depends(get_current_auditor_or_admin),
+    user=Depends(get_admin_viewer),
 ):
     """Export audit logs as CSV."""
     uid = _uuid_or_none_400(user_id)

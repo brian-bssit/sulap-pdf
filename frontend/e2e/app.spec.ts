@@ -70,7 +70,7 @@ test("compress: file bukan PDF ditolak dengan pesan error", async ({ page }) => 
 });
 
 test("admin: bisa ubah role lewat dropdown; auditor hanya baca", async ({ page }) => {
-  await loginAs(page, "e2e-admin@banksampoerna.com", "admin");
+  await loginAs(page, "e2e-admin@banksampoerna.com", "super_admin");
   await page.getByText(t.nav.admin).click();
   await expect(page.getByLabel("Role untuk e2e-admin@banksampoerna.com")).toBeVisible();
 

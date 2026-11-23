@@ -14,6 +14,7 @@ from db.models import AuditLog
 # Login dan penolakan kuota itu sendiri tidak dihitung sebagai operasi.
 _NOT_COUNTED = (
     "GOOGLE_LOGIN", "LOGOUT", "SESSION_REPLACED", "SESSION_IDLE_EXPIRED", "RATE_LIMITED", "USER_ROLE_CHANGE",
+    "ROLE_CHANGE_REQUESTED", "ROLE_CHANGE_APPROVED", "ROLE_CHANGE_REJECTED", "ROLE_CHANGE_CANCELLED",
 )
 
 

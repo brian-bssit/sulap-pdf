@@ -22,14 +22,14 @@ Urutan: Gelombang 0 dulu (kerentanan), lalu A, lalu B. Tiap gelombang diakhiri c
 - [x] **Checkpoint A**
 
 ## Gelombang B — Peran dan dual control
-- [ ] B1 `auth/roles.py` + migrasi 0004 (data + tabel) + model [R5]
-- [ ] B2 Ganti dependency admin/auditor lama dengan `require_roles` di seluruh router [R6]
-- [ ] B3 `role_service`: invarian, request/approve/reject/cancel/expire + tes unit murni (tabel kebenaran invarian) [R7–R11]
-- [ ] B4 Endpoint + audit + tes integrasi Postgres (maker≠approver, ganda, race) [R7–R12]
-- [ ] B5 Frontend: tipe role, `UserManagement`, `RoleRequests`, strings, nav [R13]
-- [ ] B6 e2e: Officer mengajukan → Supervisor menyetujui; Officer tak bisa menyetujui; Super Admin langsung [R6–R9]
-- [ ] B7 Dokumen `docs/ops/matriks-role.md`, runbook (pemulihan bila tanpa Supervisor), README
-- [ ] **Checkpoint B**
+- [x] B1 `auth/roles.py` + migrasi 0004 (data + tabel) + model [R5]
+- [x] B2 Ganti dependency admin/auditor lama dengan `require_roles` di seluruh router [R6]
+- [x] B3 `role_service`: invarian, request/approve/reject/cancel + tes unit murni (tabel kebenaran invarian) [R7–R11]
+- [x] B4 Endpoint + audit + tes integrasi Postgres (maker≠approver, ganda, race) [R7–R12]
+- [x] B5 Frontend: tipe role, `UserManagement`, `RoleRequests`, strings, nav [R13]
+- [x] B6 e2e: Officer mengajukan → Supervisor menyetujui; Officer tak bisa menyetujui; Super Admin langsung [R6–R9]
+- [x] B7 Dokumen `docs/ops/matriks-role.md`, runbook (pemulihan bila tanpa Supervisor), README
+- [x] **Checkpoint B**
 
 ## Penutup
 - [ ] Z1 Perbarui `docs/security/baseline-checklist-evaluation.md` (status butir 7, 32, 33, 35, 38, 41, 42, 49, 52, 54, 66, 69, 75, 77, 78) dengan bukti
@@ -40,3 +40,8 @@ Urutan: Gelombang 0 dulu (kerentanan), lalu A, lalu B. Tiap gelombang diakhiri c
 - Saat peringatan tampil hanya tombol "Tetap masuk" yang memperpanjang sesi (gerakan pointer biasa tidak), supaya dialog tidak lenyap di tengah klik.
 - Aktivitas dibagi antar-tab lewat localStorage; operasi yang berjalan (unggah/proses) dihitung aktivitas.
 - e2e memakai `IDLE_TIMEOUT_SECONDS=20`. `npx playwright test` memakai build lama; selalu jalankan `npm run test:e2e` setelah mengubah frontend.
+
+## Catatan Gelombang B
+- Tes Postgres dual control ada di `backend/tests/db` (di-SKIP tanpa `TEST_DATABASE_URL`; DB diisi ulang tiap tes).
+- Semua perubahan role diserialkan advisory lock (`pg_advisory_xact_lock`) + `SELECT … FOR UPDATE` pada pengajuan; dua persetujuan bersamaan: satu menang, satu 409 (diuji).
+- `dev-login` kini hanya menerima role yang dikenal (400 bila tidak).

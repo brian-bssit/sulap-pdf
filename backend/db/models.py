@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import String, Boolean, DateTime, Text, BigInteger, Integer, ARRAY, Float, Index
+from sqlalchemy import String, Boolean, DateTime, Text, BigInteger, Integer, ARRAY, Float, ForeignKey, Index, text
 from sqlalchemy.dialects.postgresql import UUID, INET, JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -47,3 +47,25 @@ class AuditLog(Base):
     user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
     detail: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     executed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+
+
+class RoleChangeRequest(Base):
+    """Pengajuan perubahan role (dual control): IT DCA Officer mengajukan, IT DCA Supervisor/Super Admin memutuskan."""
+
+    __tablename__ = "role_change_requests"
+    __table_args__ = (
+        # Satu pengajuan aktif per target (juga menahan balapan dua pengajuan bersamaan).
+        Index("ux_rcr_pending_target", "target_user_id", unique=True, postgresql_where=text("status = 'PENDING'")),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    target_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    from_role: Mapped[str] = mapped_column(String(20), nullable=False)
+    to_role: Mapped[str] = mapped_column(String(20), nullable=False)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    requested_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    status: Mapped[str] = mapped_column(String(12), nullable=False)  # PENDING | APPROVED | REJECTED | CANCELLED
+    decided_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    decision_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))

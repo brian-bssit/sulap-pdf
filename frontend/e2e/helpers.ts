@@ -27,7 +27,7 @@ export function minimalPdf(text: string, pages = 1): Buffer {
 }
 
 /** Login lewat dev-login (hanya aktif di backend e2e) lalu tunggu dashboard. */
-export async function loginAs(page: Page, email: string, role: "user" | "auditor" | "admin") {
+export async function loginAs(page: Page, email: string, role: "user" | "auditor" | "dca_officer" | "dca_supervisor" | "super_admin") {
   await page.goto(`/api/auth/dev/login?email=${encodeURIComponent(email)}&role=${role}`);
   await page.waitForURL("**/dashboard");
 }

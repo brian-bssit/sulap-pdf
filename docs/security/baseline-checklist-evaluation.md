@@ -176,3 +176,10 @@ Temuan tambahan yang ikut diperbaiki:
 | 32 Force logout idle 10 menit | **OK** | `IdleGuard` (peringatan 1 menit + keluar otomatis), server menolak sesi idle (`SESSION_IDLE`), 14 tes unit, skrip Postgres (idle → 401), e2e Playwright (peringatan → keluar; "Tetap masuk" memperpanjang) |
 | 33 Tanpa multi-session | **OK** | `users.session_id` (migrasi 0003); login kedua → sesi pertama 401 `SESSION_REPLACED`; e2e dua browser; audit `SESSION_REPLACED` |
 | 38 Log login & logout | **OK** | Login, logout (`detail.reason=idle` bila dipaksa), penggantian sesi, dan idle-expiry tercatat |
+
+## Pembaruan: Gelombang B selesai (2026-11-20)
+| Butir | Status baru | Bukti |
+|---|---|---|
+| 42 Dual control user matrix | **OK** | Peran IT DCA Officer (maker), IT DCA Supervisor (approver), Super Admin (langsung); tabel `role_change_requests` (migrasi 0004); invarian (≥1 Officer ∧ ≥1 Supervisor) ∨ ≥1 Super Admin; 26 tes Postgres (maker≠approver, ganda, basi, balapan, invarian), 18 tes unit invarian, mutasi kode terdeteksi tes; e2e 3 browser |
+| 41 User matrix: role | **OK** | `docs/ops/matriks-role.md` (diperbarui) |
+| 37 Audit akses (create/disable) | **OK (create + perubahan role)** | `ROLE_CHANGE_REQUESTED/APPROVED/REJECTED/CANCELLED`, `USER_ROLE_CHANGE` (+ `created_at`). Disable user tetap di luar lingkup (keputusan sebelumnya) |

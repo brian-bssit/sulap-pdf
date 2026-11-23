@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config import settings
 from db.database import get_db
 from db.queries import get_user_by_google_sub, create_user, update_last_login
+from auth import roles
 from auth.session import issue_token
 from auth.domain import check_identity
 from audit import log_audit
@@ -160,6 +161,8 @@ async def dev_login(request: Request, db: AsyncSession = Depends(get_db)):
     dev_email = request.query_params.get("email", "dev@sulap.local")
     dev_name = request.query_params.get("name", "Dev User")
     dev_role = request.query_params.get("role", "user")
+    if dev_role not in roles.ALL_ROLES:
+        raise HTTPException(status_code=400, detail="Role tidak dikenal")
     dev_sub = f"dev-{dev_email}"
 
     user = await get_user_by_google_sub(db, dev_sub)

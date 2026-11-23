@@ -3,6 +3,8 @@
 import { redirectToLogin } from "@/lib/session";
 import { t } from "@/lib/strings";
 import IdleGuard from "@/components/IdleGuard";
+import RoleRequests from "@/components/RoleRequests";
+import { ROLES, VIEW_ROLES, isRole, type Role } from "@/lib/roles";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -17,6 +19,7 @@ import {
   FileUp,
   PenTool,
   Scissors,
+  GitPullRequest,
 } from "lucide-react";
 import CompressTool from "@/components/CompressTool";
 import MergeTool from "@/components/MergeTool";
@@ -34,19 +37,20 @@ type Tab = "merge" | "compress" | "rearrange" | "remove-pages" | "convert" | "ed
 interface User {
   name: string;
   email: string;
-  role: "user" | "admin" | "auditor";
+  id: string;
+  role: Role;
 }
 
-const DEMO_USER: User = { name: t.shell.loading, email: "", role: "user" };
+const DEMO_USER: User = { id: "", name: t.shell.loading, email: "", role: "user" };
 
-const navItems: { id: Tab; label: string; icon: React.ReactNode; roles: string[] }[] = [
-  { id: "compress", label: t.nav.compress, icon: <Minimize2 size={20} />, roles: ["user", "auditor", "admin"] },
-  { id: "merge", label: t.nav.merge, icon: <Layers size={20} />, roles: ["user", "auditor", "admin"] },
-  { id: "rearrange", label: t.nav.rearrange, icon: <Grid3x3 size={20} />, roles: ["user", "auditor", "admin"] },
-  { id: "remove-pages", label: t.nav.removePages, icon: <Scissors size={20} />, roles: ["user", "auditor", "admin"] },
-  { id: "convert", label: t.nav.convert, icon: <FileUp size={20} />, roles: ["user", "auditor", "admin"] },
-  { id: "edit", label: t.nav.edit, icon: <PenTool size={20} />, roles: ["user", "auditor", "admin"] },
-  { id: "admin", label: t.nav.admin, icon: <ShieldAlert size={20} />, roles: ["auditor", "admin"] },
+const navItems: { id: Tab; label: string; icon: React.ReactNode; roles: readonly string[] }[] = [
+  { id: "compress", label: t.nav.compress, icon: <Minimize2 size={20} />, roles: ROLES },
+  { id: "merge", label: t.nav.merge, icon: <Layers size={20} />, roles: ROLES },
+  { id: "rearrange", label: t.nav.rearrange, icon: <Grid3x3 size={20} />, roles: ROLES },
+  { id: "remove-pages", label: t.nav.removePages, icon: <Scissors size={20} />, roles: ROLES },
+  { id: "convert", label: t.nav.convert, icon: <FileUp size={20} />, roles: ROLES },
+  { id: "edit", label: t.nav.edit, icon: <PenTool size={20} />, roles: ROLES },
+  { id: "admin", label: t.nav.admin, icon: <ShieldAlert size={20} />, roles: VIEW_ROLES },
 ];
 
 const pageTitles: Record<Tab, { title: string; subtitle: string }> = t.pages;
@@ -70,7 +74,7 @@ export default function DashboardPage() {
       })
       .then((data) => {
         if (!data) return;
-        setUser({ name: data.display_name, email: data.email, role: data.role });
+        setUser({ id: data.id, name: data.display_name, email: data.email, role: isRole(data.role) ? data.role : "user" });
         setIdleSeconds(data.idle_timeout_seconds ?? 0);
       })
       .catch(() => router.push("/"));
@@ -140,7 +144,7 @@ export default function DashboardPage() {
               <span className="ml-3">{item.label}</span>
               {item.id === "admin" && (
                 <span className="ml-auto text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">
-                  {user.role.toUpperCase()}
+                  {(t.roles[user.role] ?? user.role).toUpperCase()}
                 </span>
               )}
             </button>
@@ -200,7 +204,7 @@ export default function DashboardPage() {
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-thin">
           <div className="max-w-5xl mx-auto w-full animate-[fadeIn_0.3s_ease-out]">
-            <DashboardContent tab={activeTab} role={user.role} />
+            <DashboardContent tab={activeTab} me={{ id: user.id, role: user.role }} />
           </div>
         </div>
 
@@ -227,7 +231,7 @@ export default function DashboardPage() {
   );
 }
 
-function DashboardContent({ tab, role }: { tab: Tab; role: User["role"] }) {
+function DashboardContent({ tab, me }: { tab: Tab; me: { id: string; role: Role } }) {
   switch (tab) {
     case "merge":
       return <MergeTool />;
@@ -242,39 +246,30 @@ function DashboardContent({ tab, role }: { tab: Tab; role: User["role"] }) {
     case "edit":
       return <EditOverlayTool />;
     case "admin":
-      return <AdminPanel readOnly={role !== "admin"} />;
+      return <AdminPanel me={me} />;
   }
 }
 
-function AdminPanel({ readOnly }: { readOnly: boolean }) {
-  const [subTab, setSubTab] = useState<"users" | "audit">("users");
+function AdminPanel({ me }: { me: { id: string; role: Role } }) {
+  const [subTab, setSubTab] = useState<"users" | "requests" | "audit">("users");
+  const tabCls = (on: boolean) =>
+    `flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+      on ? "bg-blue-100 text-blue-700 shadow-sm" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+    }`;
   return (
     <div>
-      <div className="flex gap-3 mb-6">
-        <button
-          onClick={() => setSubTab("users")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-            subTab === "users"
-              ? "bg-blue-100 text-blue-700 shadow-sm"
-              : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-          }`}
-        >
+      <div className="flex flex-wrap gap-3 mb-6">
+        <button onClick={() => setSubTab("users")} className={tabCls(subTab === "users")}>
           <Users size={16} aria-hidden="true" /> {t.admin.users}
         </button>
-        <button
-          onClick={() => setSubTab("audit")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-            subTab === "audit"
-              ? "bg-blue-100 text-blue-700 shadow-sm"
-              : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-          }`}
-        >
+        <button onClick={() => setSubTab("requests")} className={tabCls(subTab === "requests")}>
+          <GitPullRequest size={16} aria-hidden="true" /> {t.admin.requests}
+        </button>
+        <button onClick={() => setSubTab("audit")} className={tabCls(subTab === "audit")}>
           <ShieldAlert size={16} aria-hidden="true" /> {t.admin.audit}
         </button>
       </div>
-      {subTab === "users" ? <UserManagement readOnly={readOnly} /> : <AuditTable />}
+      {subTab === "users" ? <UserManagement me={me} /> : subTab === "requests" ? <RoleRequests me={me} /> : <AuditTable />}
     </div>
   );
 }
-
-

@@ -4,6 +4,7 @@ from fastapi import Request, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.jwt import decode_token, get_token_from_cookie
+from auth import roles
 from auth.session import validate_session
 from db.database import get_db
 from db.models import User
@@ -41,16 +42,19 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
     return user
 
 
-async def get_current_admin_user(request: Request, db: AsyncSession = Depends(get_db)) -> User:
-    user = await get_current_user(request, db)
-    if user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
-    return user
+def require_roles(*roles: str):
+    """Dependency: user harus memiliki salah satu `roles`. Role dibaca dari DB di tiap request."""
+
+    async def dependency(request: Request, db: AsyncSession = Depends(get_db)) -> User:
+        user = await get_current_user(request, db)
+        if user.role not in roles:
+            raise HTTPException(status_code=403, detail="Anda tidak memiliki akses untuk fungsi ini")
+        return user
+
+    return dependency
 
 
-async def get_current_auditor_or_admin(request: Request, db: AsyncSession = Depends(get_db)) -> User:
-    """Akses baca audit log & daftar user: auditor (read-only) atau admin."""
-    user = await get_current_user(request, db)
-    if user.role not in ("admin", "auditor"):
-        raise HTTPException(status_code=403, detail="Akses auditor atau admin diperlukan")
-    return user
+get_admin_viewer = require_roles(*roles.VIEW_ROLES)          # daftar user, log audit, pengajuan role (baca)
+get_super_admin = require_roles(roles.SUPER_ADMIN)           # ubah role langsung
+get_role_requester = require_roles(roles.DCA_OFFICER)        # mengajukan perubahan role
+get_role_approver = require_roles(*roles.APPROVER_ROLES)     # menyetujui/menolak pengajuan

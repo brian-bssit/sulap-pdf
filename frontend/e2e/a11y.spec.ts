@@ -54,12 +54,31 @@ const SCREENS: Screen[] = [
   },
   {
     name: "admin: user",
-    open: async (p) => { await loginAs(p, "e2e-a11y-admin@banksampoerna.com", "admin"); await nav(p, t.nav.admin); await expect(p.getByRole("table")).toBeVisible(); },
+    open: async (p) => { await loginAs(p, "e2e-a11y-admin@banksampoerna.com", "super_admin"); await nav(p, t.nav.admin); await expect(p.getByRole("table")).toBeVisible(); },
+  },
+  {
+    name: "admin: pengajuan role",
+    open: async (p) => {
+      await loginAs(p, "e2e-a11y-admin@banksampoerna.com", "super_admin");
+      await nav(p, t.nav.admin);
+      await p.getByRole("button", { name: new RegExp(t.admin.requests) }).click();
+      await expect(p.getByRole("table")).toBeVisible();
+    },
+  },
+  {
+    name: "admin: user (IT DCA Officer, form pengajuan)",
+    open: async (p) => {
+      await loginAs(p, "e2e-a11y-officer@banksampoerna.com", "dca_officer");
+      await nav(p, t.nav.admin);
+      await expect(p.getByRole("table")).toBeVisible();
+      await p.getByLabel(t.admin.userMgmt.roleFor("e2e-a11y@banksampoerna.com")).first().selectOption("auditor");
+      await expect(p.getByRole("button", { name: t.admin.userMgmt.submitRequest }).first()).toBeVisible();
+    },
   },
   {
     name: "admin: log audit",
     open: async (p) => {
-      await loginAs(p, "e2e-a11y-admin@banksampoerna.com", "admin");
+      await loginAs(p, "e2e-a11y-admin@banksampoerna.com", "super_admin");
       await nav(p, t.nav.admin);
       await p.getByRole("button", { name: new RegExp(t.admin.audit) }).click();
       await expect(p.getByRole("table")).toBeVisible();

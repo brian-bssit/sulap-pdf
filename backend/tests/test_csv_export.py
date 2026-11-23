@@ -63,6 +63,6 @@ def test_users_csv_content_and_injection_safe(monkeypatch):
     assert parsed[2][3] == "tidak" and parsed[2][4] == ""
 
 
-@pytest.mark.parametrize("role,code", [("admin", 200), ("auditor", 200), ("user", 403)])
+@pytest.mark.parametrize("role,code", [("super_admin", 200), ("dca_officer", 200), ("dca_supervisor", 200), ("auditor", 200), ("user", 403)])
 def test_users_csv_role_gate(monkeypatch, role, code):
     assert _client(monkeypatch, role, []).get("/api/admin/users/csv").status_code == code
