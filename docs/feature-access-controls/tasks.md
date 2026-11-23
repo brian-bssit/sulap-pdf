@@ -32,8 +32,8 @@ Urutan: Gelombang 0 dulu (kerentanan), lalu A, lalu B. Tiap gelombang diakhiri c
 - [x] **Checkpoint B**
 
 ## Penutup
-- [ ] Z1 Perbarui `docs/security/baseline-checklist-evaluation.md` (status butir 7, 32, 33, 35, 38, 41, 42, 49, 52, 54, 66, 69, 75, 77, 78) dengan bukti
-- [ ] Z2 `@verifier` bukti penuh
+- [x] Z1 Perbarui `docs/security/baseline-checklist-evaluation.md` (status butir 7, 32, 33, 35, 38, 41, 42, 49, 52, 54, 66, 69, 75, 77, 78) dengan bukti
+- [x] Z2 `@verifier` bukti penuh
 
 ## Catatan Gelombang A
 - Klien memaksa keluar tepat di `IDLE_TIMEOUT_SECONDS`; server jadi pengaman cadangan dengan kelonggaran 60 detik (`IDLE_GRACE_SECONDS`) agar jeda ping tak mengeluarkan user aktif lebih awal.
