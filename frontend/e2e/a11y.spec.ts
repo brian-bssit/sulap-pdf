@@ -50,17 +50,14 @@ const SCREENS: Screen[] = [
     open: async (p) => { await user(p); await nav(p, t.nav.security); await p.locator('input[type="file"]').setInputFiles(pdf("a.pdf")); await expect(p.getByLabel(t.lock.passwordLabel, { exact: true })).toBeVisible(); },
   },
   {
-    name: "bersihkan metadata (opsi)",
-    open: async (p) => { await user(p); await nav(p, t.nav.scrub); await p.locator('input[type="file"]').setInputFiles(pdf("a.pdf")); await expect(p.getByText(t.scrub.info)).toBeVisible(); },
-  },
-  {
     name: "watermark (opsi)",
     open: async (p) => { await user(p); await nav(p, t.nav.watermark); await p.locator('input[type="file"]').setInputFiles(pdf("a.pdf")); await expect(p.getByLabel(t.watermark.textLabel)).toBeVisible(); },
   },
   {
     name: "gambar → pdf (daftar)",
     open: async (p) => {
-      await user(p); await nav(p, t.nav.images);
+      await user(p); await nav(p, t.nav.convert);
+      await p.getByRole("radio", { name: new RegExp(t.images.toPdf.label) }).check();
       const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
       await p.setInputFiles("#images-file-input", [{ name: "a.png", mimeType: "image/png", buffer: png }, { name: "b.png", mimeType: "image/png", buffer: png }]);
       await expect(p.getByRole("list")).toBeVisible();
@@ -68,7 +65,7 @@ const SCREENS: Screen[] = [
   },
   {
     name: "pdf → gambar (opsi)",
-    open: async (p) => { await user(p); await nav(p, t.nav.images); await p.getByRole("radio", { name: new RegExp(t.images.toImages.label) }).check(); await p.locator('input[type="file"]').setInputFiles(pdf("a.pdf")); await expect(p.getByRole("group", { name: t.images.formatLegend })).toBeVisible(); },
+    open: async (p) => { await user(p); await nav(p, t.nav.convert); await p.getByRole("radio", { name: new RegExp(t.images.toImages.label) }).check(); await p.locator('input[type="file"]').setInputFiles(pdf("a.pdf")); await expect(p.getByRole("group", { name: t.images.formatLegend })).toBeVisible(); },
   },
   {
     name: "pdf ke word (peringatan)",
@@ -88,17 +85,7 @@ const SCREENS: Screen[] = [
       await expect(p.locator("del")).toBeVisible();
     },
   },
-  {
-    name: "alur kerja (langkah)",
-    open: async (p) => {
-      await user(p); await nav(p, t.nav.workflow);
-      await p.locator('input[type="file"]').setInputFiles(pdf("a.pdf"));
-      await p.getByLabel(t.workflow.add).selectOption({ label: t.workflow.steps.watermark });
-      await p.getByLabel(t.workflow.add).selectOption({ label: t.workflow.steps.protect });
-      await expect(p.getByLabel(t.workflow.textLabel, { exact: true })).toBeVisible();
-    },
-  },
-  { name: "konversi", open: async (p) => { await user(p); await nav(p, t.nav.convert); } },
+  { name: "konversi dokumen", open: async (p) => { await user(p); await nav(p, t.nav.convert); await expect(p.getByText(t.convert.choose)).toBeVisible(); } },
   {
     name: "edit (dokumen dibuka)",
     open: async (p) => {

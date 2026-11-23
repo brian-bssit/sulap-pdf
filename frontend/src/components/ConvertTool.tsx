@@ -8,7 +8,6 @@ import { t } from "@/lib/strings";
 import { useJob } from "@/lib/useJob";
 import LoadingOverlay from "./LoadingOverlay";
 import ResultPanel from "./ResultPanel";
-import SecurityFooter from "./SecurityFooter";
 
 const ACCEPT_TYPES = [
   ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
@@ -53,23 +52,9 @@ export default function ConvertTool() {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+    <div>
       {job.busy && <LoadingOverlay phase={job.phase} percent={job.percent} />}
-
-      {/* Header */}
-      <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-violet-50/50 to-transparent">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
-            <FileUp size={20} className="text-violet-600" aria-hidden="true" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-slate-800">{t.convert.title}</h2>
-            <p className="text-sm text-slate-500">{t.convert.subtitle}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="p-6">
+      <div className="pt-5">
         {job.result ? (
           <ResultPanel result={job.result} title={t.convert.resultTitle} onReset={reset} accent="violet">
             {file && t.convert.resultInfo(formatBytes(file.size), formatBytes(job.result.blob.size))}
@@ -149,7 +134,6 @@ export default function ConvertTool() {
           </>
         )}
       </div>
-      <SecurityFooter />
     </div>
   );
 }

@@ -36,10 +36,13 @@ Internal document processing toolkit for Bank Sahabat Sampoerna. Stateless, zero
 ### Compress PDF
 | | |
 |:---|:---|
-| **Engine** | `qpdf` (Apache 2.0) |
-| **Input** | 1 PDF file, max 30 MB |
-| **Method** | `--recompress-flate --compression-level=9 --object-streams=generate --linearize` |
-| **Output** | Streamed PDF with `X-Original-Size` / `X-Compressed-Size` headers |
+| **Engine** | `qpdf` (Apache 2.0) + `pikepdf` & `Pillow` untuk gambar (`pdf/compress_images.py`) |
+| **Input** | 1 PDF file, max 30 MB; form `level` (`low`\|`balanced`\|`high`, default `low`), `grayscale` (opsional) |
+| **Low** | Lossless: `qpdf --recompress-flate --compression-level=3` (tanpa `--linearize`) |
+| **Balanced** | Lossy: gambar > ±150 DPI diperkecil, JPEG q75, lalu qpdf level 6 |
+| **Extreme** (`high`) | Lossy: gambar > ±100 DPI diperkecil, JPEG q60, lalu qpdf level 9; opsi grayscale |
+| **Dilewati** | Gambar 1-bit/mask (JBIG2/CCITT), CMYK, `/Decode`, `/Mask`, tak bisa di-decode, atau hasil tak ≥10% lebih kecil; SMask dipertahankan |
+| **Output** | Streamed PDF; header `X-Original-Size`, `X-Compressed-Size`, `X-Compression`, `X-Images-Total`/`X-Images-Optimized` (lossy). Audit: `COMPRESS` / `COMPRESS_LOSSY` |
 
 ### Merge PDF
 | | |
@@ -83,7 +86,6 @@ Semua tool: auth + kuota + audit (aksi sendiri), upload streaming, cleanup `/tmp
 | **Split / Extract** | `POST /api/pdf/split` | pypdf | Rentang `1-3,5,8-` → 1 PDF, atau per N halaman → ZIP. Maks 200 halaman |
 | **Protect** | `POST /api/pdf/protect` | pikepdf | AES-256, password 8–128 karakter, izin cetak/salin opsional; owner password diacak dan dibuang |
 | **Unlock** | `POST /api/pdf/unlock` | pikepdf | Hanya untuk password yang diketahui user; salah → 422 "Password salah" |
-| **Scrub metadata** | `POST /api/pdf/scrub-metadata` | pikepdf | Hapus `/Info`, XMP, lampiran, JavaScript, OpenAction; header `X-Scrubbed` |
 | **Watermark** | `POST /api/pdf/watermark` | pikepdf | Teks diagonal/tengah, transparansi, warna, ukuran, halaman terpilih (font base-14, karakter WinAnsi) |
 | **Nomor halaman** | `POST /api/pdf/page-numbers` | pikepdf | 6 posisi, format `n` / `n / total`, mulai dari N. Halaman yang diputar (`/Rotate`) belum diperhitungkan |
 | **Gambar → PDF** | `POST /api/pdf/images-to-pdf` | Pillow | 1–20 JPG/PNG, A4 atau ikut gambar, EXIF dihormati, batas piksel 40 MP/gambar & 100 MP total |
@@ -91,7 +93,6 @@ Semua tool: auth + kuota + audit (aksi sendiri), upload streaming, cleanup `/tmp
 | **PDF → Word** | `POST /api/pdf/to-word` | LibreOffice (`writer_pdf_import`) | Best-effort; PDF rusak/terenkripsi → 422; PDF scan butuh OCR dulu |
 | **OCR** | `POST /api/pdf/ocr` | pypdfium2 + tesseract (`ind`, `eng`) | Maks 50 halaman, halaman bertext dilewati, header `X-Pages-OCR`. 50 halaman ≈ 57 dtk, ≈ 1,1 GB puncak; hasil bisa jauh lebih besar dari input |
 | **Bandingkan** | `POST /api/pdf/compare` | pypdf + difflib | `file_a`, `file_b` → JSON diff per kata per halaman (maks 100 halaman); hanya teks |
-| **Alur kerja** | — (browser) | endpoint di atas | 2–5 langkah berurutan; protect hanya di akhir, unlock hanya di awal; berhenti di langkah yang gagal |
 
 ### Admin Dashboard
 | | |
@@ -255,7 +256,6 @@ All endpoints prefixed with `/api`. Mutating endpoints require valid JWT cookie.
 | `POST` | `/api/pdf/split` | `file`, `mode` (`ranges`\|`every_n`), `ranges`, `every_n` | Extract halaman / pecah per N (ZIP) |
 | `POST` | `/api/pdf/protect` | `file`, `password`, `allow_print`, `allow_copy` | Enkripsi AES-256 |
 | `POST` | `/api/pdf/unlock` | `file`, `password` | Buka PDF berpassword |
-| `POST` | `/api/pdf/scrub-metadata` | `file` | Hapus metadata & muatan aktif (`X-Scrubbed`) |
 | `POST` | `/api/pdf/watermark` | `file`, `text`, `position`, `opacity`, `color`, `font_size`, `pages` | Watermark teks |
 | `POST` | `/api/pdf/page-numbers` | `file`, `position`, `format`, `start_at`, `font_size` | Nomor halaman |
 | `POST` | `/api/pdf/images-to-pdf` | `files` (1-20), `page_size` (`a4`\|`fit`) | Gambar → PDF |
@@ -309,7 +309,7 @@ All endpoints prefixed with `/api`. Mutating endpoints require valid JWT cookie.
 | `id` | BIGINT (PK) | Auto-increment |
 | `user_id` | UUID NULL | FK to users |
 | `user_email` | VARCHAR(255) | Denormalized for fast queries |
-| `action` | VARCHAR(50) | COMPRESS, MERGE, REARRANGE, REMOVE_PAGES, CONVERT, EDIT_OVERLAY, SPLIT, PROTECT, UNLOCK, SCRUB_METADATA, WATERMARK, PAGE_NUMBERS, IMG_TO_PDF, PDF_TO_WORD, OCR, COMPARE, GOOGLE_LOGIN, LOGOUT, SESSION_REPLACED, ROLE_CHANGE_REQUESTED/APPROVED/REJECTED/CANCELLED, USER_ROLE_CHANGE, RATE_LIMITED |
+| `action` | VARCHAR(50) | COMPRESS, COMPRESS_LOSSY, MERGE, REARRANGE, REMOVE_PAGES, CONVERT, EDIT_OVERLAY, SPLIT, PROTECT, UNLOCK, WATERMARK, PAGE_NUMBERS, IMG_TO_PDF, PDF_TO_WORD, OCR, COMPARE, GOOGLE_LOGIN, LOGOUT, SESSION_REPLACED, ROLE_CHANGE_REQUESTED/APPROVED/REJECTED/CANCELLED, USER_ROLE_CHANGE, RATE_LIMITED |
 | `source_files` | TEXT[] | Original filenames |
 | `result_file` | VARCHAR(255) | Output filename |
 | `file_sizes` | BIGINT[] | Input file sizes in bytes |

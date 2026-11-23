@@ -7,11 +7,13 @@ from pathlib import Path
 from fastapi import APIRouter, Request, Depends, Form, HTTPException, UploadFile, File
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.concurrency import run_in_threadpool
 
 from config import settings
 from db.database import get_db
 from auth.dependencies import get_current_user
 from audit import log_audit
+from pdf.compress_images import optimize_images
 from pdf.dl_headers import attachment_filename
 from pdf.errors import raise_if_encrypted
 from pdf.upload import save_upload
@@ -20,12 +22,13 @@ logger = logging.getLogger("cloudpdf")
 
 router = APIRouter()
 
-# Semua level LOSSLESS (qpdf tak mengubah kualitas gambar). Level hanya menukar kecepatan vs ukuran.
-# "high" = perilaku lama (default bila klien tak mengirim `level`).
+# low = LOSSLESS (qpdf saja). balanced/high (UI: Balanced/Extreme) = LOSSY: gambar diperkecil ke 150/100 DPI
+# + JPEG q75/q60 (pdf/compress_images.py), lalu qpdf. Default bila klien tak mengirim `level`: low.
+# Tanpa --linearize: itu optimasi tampilan web, bukan pengecil ukuran.
 _LEVEL_ARGS = {
     "low": ["--recompress-flate", "--compression-level=3"],
     "balanced": ["--recompress-flate", "--compression-level=6", "--object-streams=generate"],
-    "high": ["--linearize", "--recompress-flate", "--compression-level=9", "--object-streams=generate"],
+    "high": ["--recompress-flate", "--compression-level=9", "--object-streams=generate"],
 }
 
 PDF_MAGIC = b"%PDF"
@@ -46,7 +49,8 @@ def _validate_pdf(path_str: str, max_size_mb: int) -> int:
 async def compress_pdf(
     request: Request,
     file: UploadFile = File(...),
-    level: str = Form("high"),
+    level: str = Form("low"),
+    grayscale: bool = Form(False),
     db: AsyncSession = Depends(get_db),
     user=Depends(get_current_user),
 ):
@@ -56,6 +60,9 @@ async def compress_pdf(
     job_id = str(uuid.uuid4())[:8]
     input_path = Path(f"/tmp/cpdf_{job_id}_input.pdf")
     output_path = Path(f"/tmp/cpdf_{job_id}_output.pdf")
+    opt_path = Path(f"/tmp/cpdf_{job_id}_opt.pdf")
+    lossy = level != "low"
+    stats = None
     start_time = time.monotonic()
     input_size = 0
 
@@ -66,11 +73,20 @@ async def compress_pdf(
         await raise_if_encrypted(input_path)
 
         if await request.is_disconnected():
-            await _audit(db, request, user, file, input_size, 0, "CANCELLED_BY_CLIENT")
-            _cleanup(input_path, output_path)
+            await _audit(db, request, user, file, input_size, 0, "CANCELLED_BY_CLIENT", lossy=lossy)
+            _cleanup(input_path, output_path, opt_path)
             return StreamingResponse(iter([]), status_code=499)
 
-        cmd = ["qpdf", *_LEVEL_ARGS[level], str(input_path), str(output_path)]
+        qpdf_src = input_path
+        if lossy:
+            deadline = time.monotonic() + settings.request_timeout_seconds - 20
+            try:
+                stats = await run_in_threadpool(optimize_images, input_path, opt_path, level, grayscale, deadline)
+            except Exception:
+                raise HTTPException(status_code=422, detail="PDF tidak bisa diproses. File mungkin rusak.")
+            qpdf_src = opt_path
+
+        cmd = ["qpdf", *_LEVEL_ARGS[level], str(qpdf_src), str(output_path)]
 
         process = await asyncio.create_subprocess_exec(
             *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
@@ -100,7 +116,7 @@ async def compress_pdf(
             output_size = input_size
         processing_ms = int((time.monotonic() - start_time) * 1000)
 
-        await _audit(db, request, user, file, input_size, output_size, "SUCCESS", processing_ms)
+        await _audit(db, request, user, file, input_size, output_size, "SUCCESS", processing_ms, lossy=lossy)
 
         pct = round((1 - output_size / input_size) * 100) if input_size else 0
         logger.info(f"Compress {job_id}: {input_size}→{output_size} ({pct}%), {processing_ms}ms")
@@ -115,25 +131,26 @@ async def compress_pdf(
                 "X-Original-Size": str(input_size),
                 "X-Compressed-Size": str(output_size),
                 "X-Compression": "unchanged" if unchanged else "reduced",
+                **({"X-Images-Total": str(stats.total), "X-Images-Optimized": str(stats.changed)} if stats else {}),
             },
         )
 
     except HTTPException as e:
-        await _audit(db, request, user, file, input_size, 0, "FAILED", error_msg=str(e.detail)[:500])
+        await _audit(db, request, user, file, input_size, 0, "FAILED", error_msg=str(e.detail)[:500], lossy=lossy)
         raise
     except Exception as e:
         logger.error(f"Compress error job={job_id}: {e}")
-        await _audit(db, request, user, file, input_size, 0, "FAILED", error_msg=str(e)[:500])
+        await _audit(db, request, user, file, input_size, 0, "FAILED", error_msg=str(e)[:500], lossy=lossy)
         raise HTTPException(status_code=500, detail="Gagal memproses file")
     finally:
-        _cleanup(input_path, output_path)
+        _cleanup(input_path, output_path, opt_path)
 
 
-async def _audit(db, request, user, file, input_size, output_size, status, processing_ms=0, error_msg=None):
+async def _audit(db, request, user, file, input_size, output_size, status, processing_ms=0, error_msg=None, lossy=False):
     await log_audit(
         db=db, request=request,
         user_id=str(user.id), user_email=user.email,
-        action="COMPRESS",
+        action="COMPRESS_LOSSY" if lossy else "COMPRESS",
         source_files=[file.filename or "unknown"],
         result_file=f"compressed_{Path(file.filename or 'document').stem}.pdf" if status == "SUCCESS" else None,
         file_sizes=[input_size],

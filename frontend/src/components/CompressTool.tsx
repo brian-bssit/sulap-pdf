@@ -15,7 +15,8 @@ const LEVELS: Level[] = ["low", "balanced", "high"];
 
 export default function CompressTool() {
   const [file, setFile] = useState<File | null>(null);
-  const [level, setLevel] = useState<Level>("high");
+  const [level, setLevel] = useState<Level>("balanced");
+  const [gray, setGray] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const job = useJob();
 
@@ -35,6 +36,7 @@ export default function CompressTool() {
       const form = new FormData();
       form.append("file", file);
       form.append("level", level);
+      if (level !== "low" && gray) form.append("grayscale", "true");
       await job.run("/api/pdf/compress", form, `compressed_${file.name}`);
     } catch (err: unknown) {
       const detail = errorDetail(err);
@@ -46,6 +48,8 @@ export default function CompressTool() {
   const original = file?.size ?? 0;
   const compressed = result?.blob.size ?? 0;
   const unchanged = result?.headers["x-compression"] === "unchanged";
+  const imgTotal = result?.headers["x-images-total"] != null ? Number(result.headers["x-images-total"]) : null;
+  const imgDone = Number(result?.headers["x-images-optimized"] ?? 0);
   const pct = original ? Math.round((1 - compressed / original) * 100) : 0;
 
   return (
@@ -144,6 +148,15 @@ export default function CompressTool() {
                 </label>
               ))}
             </div>
+            {level !== "low" && (
+              <>
+                <label className="flex items-center gap-2 mt-3 text-sm text-slate-700">
+                  <input type="checkbox" checked={gray} onChange={(e) => setGray(e.target.checked)} className="accent-emerald-600" />
+                  {t.compress.grayscale}
+                </label>
+                <p role="note" className="mt-3 p-3 text-xs text-amber-900 bg-amber-50 border border-amber-200 rounded-xl">{t.compress.lossyWarning}</p>
+              </>
+            )}
           </fieldset>
         )}
 
@@ -151,6 +164,9 @@ export default function CompressTool() {
         {result && (
           <ResultPanel result={result} title={unchanged ? t.compress.unchangedTitle : t.compress.reducedTitle} onReset={reset} accent="emerald">
             {unchanged ? t.compress.unchanged : t.compress.reduced(formatBytes(original), formatBytes(compressed), pct)}
+            {imgTotal !== null && (
+              <span className="block mt-1 text-xs">{imgTotal === 0 ? t.compress.noImages : t.compress.imagesDone(imgDone, imgTotal)}</span>
+            )}
           </ResultPanel>
         )}
 

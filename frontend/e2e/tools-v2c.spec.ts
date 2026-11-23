@@ -21,7 +21,8 @@ async function download(page: Page, label: string) {
 }
 
 test("gambar → PDF: urutan bisa diubah, hasil PDF", async ({ page }) => {
-  await open(page, t.nav.images);
+  await open(page, t.nav.convert);
+  await page.getByRole("radio", { name: new RegExp(t.images.toPdf.label) }).check();
   await expect(page.getByRole("button", { name: t.images.actionToPdf })).toBeDisabled();
   await page.setInputFiles("#images-file-input", [img("satu.png"), img("dua.png")]);
   await expect(page.getByRole("list").getByRole("listitem")).toHaveCount(2);
@@ -36,13 +37,14 @@ test("gambar → PDF: urutan bisa diubah, hasil PDF", async ({ page }) => {
 });
 
 test("gambar → PDF: file bukan gambar ditolak di klien", async ({ page }) => {
-  await open(page, t.nav.images);
+  await open(page, t.nav.convert);
+  await page.getByRole("radio", { name: new RegExp(t.images.toPdf.label) }).check();
   await page.setInputFiles("#images-file-input", { name: "a.txt", mimeType: "text/plain", buffer: Buffer.from("x") });
   await expect(page.getByRole("alert").filter({ hasText: t.images.onlyImages })).toBeVisible();
 });
 
 test("PDF → gambar: dirender di browser, tanpa request ke server, ZIP valid", async ({ page }) => {
-  await open(page, t.nav.images);
+  await open(page, t.nav.convert);
   await page.getByRole("radio", { name: new RegExp(t.images.toImages.label) }).check();
   const apiCalls: string[] = [];
   page.on("request", (r) => { if (r.url().includes("/api/pdf/")) apiCalls.push(r.url()); });

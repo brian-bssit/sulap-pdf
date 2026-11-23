@@ -11,7 +11,6 @@ from pdf.convert import router as convert_router
 from pdf.edit_overlay import router as edit_overlay_router
 from pdf.split import router as split_router
 from pdf.security import router as security_router
-from pdf.scrub import router as scrub_router
 from pdf.watermark import router as watermark_router
 from pdf.img2pdf import router as img2pdf_router
 from pdf.to_word import router as to_word_router
@@ -35,7 +34,6 @@ api_router.include_router(convert_router, prefix="/pdf", tags=["pdf"], dependenc
 api_router.include_router(edit_overlay_router, prefix="/pdf", tags=["pdf"], dependencies=[Depends(enforce_quota)])
 api_router.include_router(split_router, prefix="/pdf", tags=["pdf"], dependencies=[Depends(enforce_quota)])
 api_router.include_router(security_router, prefix="/pdf", tags=["pdf"], dependencies=[Depends(enforce_quota)])
-api_router.include_router(scrub_router, prefix="/pdf", tags=["pdf"], dependencies=[Depends(enforce_quota)])
 api_router.include_router(watermark_router, prefix="/pdf", tags=["pdf"], dependencies=[Depends(enforce_quota)])
 api_router.include_router(img2pdf_router, prefix="/pdf", tags=["pdf"], dependencies=[Depends(enforce_quota)])
 api_router.include_router(to_word_router, prefix="/pdf", tags=["pdf"], dependencies=[Depends(enforce_quota)])

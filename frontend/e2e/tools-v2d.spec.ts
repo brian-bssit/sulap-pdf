@@ -44,38 +44,3 @@ test("bandingkan: dokumen sama → tidak ada perbedaan", async ({ page }) => {
   await page.getByRole("button", { name: t.compare.action, exact: true }).click();
   await expect(page.getByText(t.compare.identical)).toBeVisible();
 });
-
-test("alur kerja: bersihkan → watermark → kunci, hasil terenkripsi", async ({ page }) => {
-  await open(page, t.nav.workflow);
-  await page.locator('input[type="file"]').setInputFiles(pdf("laporan.pdf", "Laporan", 2));
-  const run = page.getByRole("button", { name: t.workflow.action, exact: true });
-  await expect(run).toBeDisabled();
-  const add = page.getByLabel(t.workflow.add);
-  await add.selectOption({ label: t.workflow.steps.scrub });
-  await add.selectOption({ label: t.workflow.steps.watermark });
-  await add.selectOption({ label: t.workflow.steps.protect });
-  await expect(run).toBeDisabled(); // isian belum lengkap
-  await page.getByLabel(t.workflow.textLabel, { exact: true }).fill("RAHASIA");
-  await page.getByLabel(t.workflow.passwordLabel, { exact: true }).fill("rahasia-e2e-123");
-  await run.click();
-  await expect(page.getByText(t.workflow.doneTitle)).toBeVisible();
-  await expect(page.getByText(t.workflow.doneInfo(3))).toBeVisible();
-  const f = await download(page, t.result.download);
-  expect(f.name).toBe("protected_watermark_bersih_laporan.pdf"); // jejak nama tiap langkah
-  expect(f.data.includes("/Encrypt")).toBe(true);
-});
-
-test("alur kerja: kunci tidak di akhir ditolak; langkah gagal disebut dan berhenti", async ({ page }) => {
-  await open(page, t.nav.workflow);
-  await page.locator('input[type="file"]').setInputFiles(pdf("a.pdf"));
-  const add = page.getByLabel(t.workflow.add);
-  await add.selectOption({ label: t.workflow.steps.protect });
-  await add.selectOption({ label: t.workflow.steps.scrub });
-  await expect(page.getByText(t.workflow.errors["protect-last"])).toBeVisible();
-  await expect(page.getByRole("button", { name: t.workflow.action, exact: true })).toBeDisabled();
-  await page.getByRole("button", { name: t.workflow.remove(t.workflow.steps.protect) }).click();
-  await add.selectOption({ label: t.workflow.steps["remove-pages"] });
-  await page.getByLabel(t.workflow.pagesLabel, { exact: true }).fill("9"); // PDF hanya 1 halaman
-  await page.getByRole("button", { name: t.workflow.action, exact: true }).click();
-  await expect(page.getByRole("alert").filter({ hasText: "Gagal di langkah 2" })).toContainText(t.workflow.steps["remove-pages"]);
-});

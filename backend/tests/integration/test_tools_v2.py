@@ -1,4 +1,4 @@
-"""Integrasi PDF Tools v2 gelombang B (split, unlock, protect, scrub, watermark, nomor halaman)."""
+"""Integrasi PDF Tools v2 gelombang B (split, unlock, protect, watermark, nomor halaman)."""
 
 import io
 import logging
@@ -93,34 +93,6 @@ def test_passwords_never_logged_or_audited(client, pdf_encrypted, pdf_normal, au
     post(client, "unlock", pdf_encrypted, password=secret)  # salah → gagal
     assert secret not in caplog.text
     assert secret not in str(audit_rows)
-
-
-# ── scrub ──
-def test_scrub_removes_metadata_and_active_content(client, audit_rows):
-    src = io.BytesIO()
-    with pikepdf.new() as p:
-        p.add_blank_page()
-        p.docinfo["/Title"] = "Rahasia"
-        p.docinfo["/Author"] = "Budi"
-        p.Root["/OpenAction"] = pikepdf.Dictionary(S=pikepdf.Name("/JavaScript"), JS=pikepdf.String("app.alert(1)"))
-        with p.open_metadata() as m:
-            m["dc:title"] = "Rahasia"
-        p.save(src)
-    r = post(client, "scrub-metadata", src.getvalue())
-    assert r.status_code == 200
-    assert set(r.headers["x-scrubbed"].split(",")) == {"Info", "XMP", "OpenAction"}
-    with pikepdf.open(io.BytesIO(r.content)) as out:
-        assert len(out.docinfo) == 0
-        assert "/Metadata" not in out.Root and "/OpenAction" not in out.Root
-        assert len(out.pages) == 1
-    assert b"Rahasia" not in r.content and b"Budi" not in r.content
-    assert last_audit(audit_rows)["action"] == "SCRUB_METADATA"
-
-
-def test_scrub_keeps_page_text(client, pdf_normal):
-    r = post(client, "scrub-metadata", pdf_normal)
-    assert r.status_code == 200 and r.headers["x-scrubbed"] == ""
-    assert pages_text(r.content) == ["Halaman 1", "Halaman 2", "Halaman 3"]
 
 
 # ── watermark ──

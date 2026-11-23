@@ -142,6 +142,7 @@ export default function AuditTable() {
             <option value="">{t.admin.allActions}</option>
             <option value="MERGE">MERGE</option>
             <option value="COMPRESS">COMPRESS</option>
+            <option value="COMPRESS_LOSSY">COMPRESS LOSSY</option>
             <option value="REARRANGE">REARRANGE</option>
             <option value="REMOVE_PAGES">REMOVE PAGES</option>
             <option value="CONVERT">CONVERT</option>
@@ -152,7 +153,6 @@ export default function AuditTable() {
             <option value="SPLIT">SPLIT</option>
             <option value="UNLOCK">UNLOCK</option>
             <option value="PROTECT">PROTECT</option>
-            <option value="SCRUB_METADATA">SCRUB METADATA</option>
             <option value="WATERMARK">WATERMARK</option>
             <option value="PAGE_NUMBERS">PAGE NUMBERS</option>
             <option value="EDIT_OVERLAY">EDIT OVERLAY</option>

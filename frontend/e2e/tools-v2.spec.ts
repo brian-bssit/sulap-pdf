@@ -75,14 +75,6 @@ test("kunci lalu buka: password salah ditolak, benar berhasil", async ({ page })
   expect(open_.data.includes("/Encrypt")).toBe(false);
 });
 
-test("scrub: hasil menyebut yang dihapus", async ({ page }) => {
-  await open(page, t.nav.scrub);
-  await page.locator('input[type="file"]').setInputFiles(pdf("a.pdf"));
-  await page.getByRole("button", { name: t.scrub.action, exact: true }).click();
-  await expect(page.getByText(t.scrub.doneTitle)).toBeVisible();
-  await expect(page.getByText(t.scrub.nothing)).toBeVisible(); // PDF uji tak punya metadata
-});
-
 test("watermark lalu nomor halaman", async ({ page }) => {
   await open(page, t.nav.watermark);
   await page.locator('input[type="file"]').setInputFiles(pdf("a.pdf", 2));
