@@ -9,8 +9,8 @@ RUN npm run build
 # Stage 2: Backend + frontend static files
 FROM python:3.12-slim
 RUN apt-get update && apt-get install -y --no-install-recommends --no-install-suggests \
-    qpdf curl \
-    libreoffice-core libreoffice-writer libreoffice-calc libreoffice-impress libreoffice-draw \
+    qpdf curl tesseract-ocr tesseract-ocr-ind tesseract-ocr-eng \
+    libreoffice-core libreoffice-writer libreoffice-calc libreoffice-impress libreoffice-draw libreoffice-pdfimport \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY backend/requirements.lock .

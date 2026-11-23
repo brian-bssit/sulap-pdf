@@ -10,22 +10,26 @@ import PdfPreview from "./PdfPreview";
 
 /** Hasil pemrosesan: pratinjau halaman pertama + tombol Unduh. Unduhan baru terjadi saat user menekan tombol. */
 export default function ResultPanel({
-  result, title, children, onReset, accent = "emerald",
+  result, title, children, onReset, accent = "emerald", preview = true, downloadLabel,
 }: {
   result: JobResult;
   title: string;
   children?: ReactNode;
   onReset: () => void;
   accent?: "emerald" | "blue" | "amber" | "purple" | "indigo" | "violet";
+  preview?: boolean; // false untuk hasil non-PDF (mis. ZIP)
+  downloadLabel?: string;
 }) {
   const ring = { emerald: "border-emerald-200 bg-emerald-50", blue: "border-blue-200 bg-blue-50", amber: "border-amber-200 bg-amber-50", purple: "border-purple-200 bg-purple-50", indigo: "border-indigo-200 bg-indigo-50", violet: "border-violet-200 bg-violet-50" }[accent];
   const btn = { emerald: "from-emerald-600 to-teal-600", blue: "from-blue-600 to-indigo-600", amber: "from-amber-600 to-orange-700", purple: "from-purple-600 to-indigo-600", indigo: "from-indigo-600 to-blue-600", violet: "from-violet-600 to-purple-600" }[accent];
   return (
     <section aria-label={t.result.ready} className={`mb-6 p-4 rounded-xl border ${ring}`}>
       <div className="flex flex-col sm:flex-row gap-5">
-        <div className="sm:w-[260px] flex-shrink-0">
-          <PdfPreview blob={result.blob} />
-        </div>
+        {preview && (
+          <div className="sm:w-[260px] flex-shrink-0">
+            <PdfPreview blob={result.blob} />
+          </div>
+        )}
         <div className="flex-1 min-w-0 flex flex-col">
           <div role="status" aria-live="polite" className="flex items-start gap-2">
             <CheckCircle2 size={20} className="text-emerald-600 mt-0.5 flex-shrink-0" aria-hidden="true" />
@@ -41,7 +45,7 @@ export default function ResultPanel({
               className={`flex items-center gap-2 bg-gradient-to-r ${btn} text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg shadow-slate-900/10 hover:brightness-110 transition`}
             >
               <Download size={16} aria-hidden="true" />
-              {t.result.download}
+              {downloadLabel ?? t.result.download}
             </button>
             <button onClick={onReset} className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-medium hover:bg-slate-100 transition-colors">
               {t.common.processAnother}

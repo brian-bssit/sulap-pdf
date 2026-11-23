@@ -38,15 +38,6 @@
   animation: shimmer 2s infinite;
 }
 
-/* bg-white = permukaan kartu: di mode gelap menjadi --surface (text-white tidak ikut berubah). Harus setelah utilities. */
-@media (prefers-color-scheme: dark) {
-  .bg-white { background-color: rgb(var(--surface)); }
-  .bg-white\/95 { background-color: rgb(var(--surface) / 0.95); }
-  .bg-white\/90 { background-color: rgb(var(--surface) / 0.9); }
-  .bg-white\/80 { background-color: rgb(var(--surface) / 0.8); }
-  .bg-white\/60 { background-color: rgb(var(--surface) / 0.6); }
-}
-
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }

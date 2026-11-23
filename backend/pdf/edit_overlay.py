@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 import re
 import time
 import uuid
@@ -249,7 +250,14 @@ def _apply_overlay(pdf: pikepdf.Pdf, ops: list[dict], author_label: str) -> int:
                 size = op["font_size"]
                 x, y = op["x"], op["y"]
                 r, g, b = _hex_color(op["color"])
-                segs.append(f"{r} {g} {b} rg BT {slot} {size} Tf 1 0 0 1 {x} {y} Tm <{_winansi_hex(text)}> Tj ET")
+                # `rotate` (derajat) & `opacity` opsional — dipakai watermark; tanpa keduanya perilaku lama.
+                th = math.radians(op.get("rotate", 0))
+                c, s = round(math.cos(th), 5), round(math.sin(th), 5)
+                tm = f"{c} {s} {-s} {c}" if th else "1 0 0 1"
+                seg = f"{r} {g} {b} rg BT {slot} {size} Tf {tm} {x} {y} Tm <{_winansi_hex(text)}> Tj ET"
+                if "opacity" in op:
+                    seg = f"q {_ensure_extgstate(res, op['opacity'])} gs {seg} Q"
+                segs.append(seg)
                 count += 1
 
             elif otype == "rectangle":

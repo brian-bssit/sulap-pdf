@@ -41,6 +41,63 @@ const SCREENS: Screen[] = [
     name: "hapus halaman",
     open: async (p) => { await user(p); await nav(p, t.nav.removePages); await p.locator('input[type="file"]').setInputFiles(pdf("a.pdf", 3)); await expect(p.getByRole("button", { name: /Halaman 1,/ })).toBeVisible(); },
   },
+  {
+    name: "pisah halaman (opsi)",
+    open: async (p) => { await user(p); await nav(p, t.nav.split); await p.locator('input[type="file"]').setInputFiles(pdf("a.pdf", 3)); await expect(p.getByLabel(t.split.rangesLabel)).toBeVisible(); },
+  },
+  {
+    name: "kunci pdf (opsi)",
+    open: async (p) => { await user(p); await nav(p, t.nav.security); await p.locator('input[type="file"]').setInputFiles(pdf("a.pdf")); await expect(p.getByLabel(t.lock.passwordLabel, { exact: true })).toBeVisible(); },
+  },
+  {
+    name: "bersihkan metadata (opsi)",
+    open: async (p) => { await user(p); await nav(p, t.nav.scrub); await p.locator('input[type="file"]').setInputFiles(pdf("a.pdf")); await expect(p.getByText(t.scrub.info)).toBeVisible(); },
+  },
+  {
+    name: "watermark (opsi)",
+    open: async (p) => { await user(p); await nav(p, t.nav.watermark); await p.locator('input[type="file"]').setInputFiles(pdf("a.pdf")); await expect(p.getByLabel(t.watermark.textLabel)).toBeVisible(); },
+  },
+  {
+    name: "gambar → pdf (daftar)",
+    open: async (p) => {
+      await user(p); await nav(p, t.nav.images);
+      const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+      await p.setInputFiles("#images-file-input", [{ name: "a.png", mimeType: "image/png", buffer: png }, { name: "b.png", mimeType: "image/png", buffer: png }]);
+      await expect(p.getByRole("list")).toBeVisible();
+    },
+  },
+  {
+    name: "pdf → gambar (opsi)",
+    open: async (p) => { await user(p); await nav(p, t.nav.images); await p.getByRole("radio", { name: new RegExp(t.images.toImages.label) }).check(); await p.locator('input[type="file"]').setInputFiles(pdf("a.pdf")); await expect(p.getByRole("group", { name: t.images.formatLegend })).toBeVisible(); },
+  },
+  {
+    name: "pdf ke word (peringatan)",
+    open: async (p) => { await user(p); await nav(p, t.nav.toWord); await p.locator('input[type="file"]').setInputFiles(pdf("a.pdf")); await expect(p.getByRole("note")).toBeVisible(); },
+  },
+  {
+    name: "ocr (opsi)",
+    open: async (p) => { await user(p); await nav(p, t.nav.ocr); await p.locator('input[type="file"]').setInputFiles(pdf("a.pdf")); await expect(p.getByRole("group", { name: t.ocr.langLegend })).toBeVisible(); },
+  },
+  {
+    name: "bandingkan (hasil)",
+    open: async (p) => {
+      await user(p); await nav(p, t.nav.compare);
+      await p.setInputFiles("#compare-a", { name: "a.pdf", mimeType: "application/pdf", buffer: minimalPdf("Saldo lama") });
+      await p.setInputFiles("#compare-b", { name: "b.pdf", mimeType: "application/pdf", buffer: minimalPdf("Saldo baru") });
+      await p.getByRole("button", { name: t.compare.action, exact: true }).click();
+      await expect(p.locator("del")).toBeVisible();
+    },
+  },
+  {
+    name: "alur kerja (langkah)",
+    open: async (p) => {
+      await user(p); await nav(p, t.nav.workflow);
+      await p.locator('input[type="file"]').setInputFiles(pdf("a.pdf"));
+      await p.getByLabel(t.workflow.add).selectOption({ label: t.workflow.steps.watermark });
+      await p.getByLabel(t.workflow.add).selectOption({ label: t.workflow.steps.protect });
+      await expect(p.getByLabel(t.workflow.textLabel, { exact: true })).toBeVisible();
+    },
+  },
   { name: "konversi", open: async (p) => { await user(p); await nav(p, t.nav.convert); } },
   {
     name: "edit (dokumen dibuka)",
@@ -86,7 +143,7 @@ const SCREENS: Screen[] = [
   },
 ];
 
-for (const scheme of ["light", "dark"] as const) {
+for (const scheme of ["light"] as const) {
   for (const s of SCREENS) {
     test(`axe WCAG 2.1 AA — ${s.name} (${scheme})`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: scheme });

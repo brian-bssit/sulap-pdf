@@ -64,6 +64,7 @@ Daftar lengkap: **`THIRD_PARTY_NOTICES/npm/index.json`**. Termasuk komponen buil
 | CPython | 3.12.x | Python-2.0 | `system/debian.md` |
 | qpdf | 11.3.0-1+deb12u1 | Apache-2.0 | `system/qpdf.md` |
 | LibreOffice core/writer/calc/impress/draw | 4:7.4.7-1+deb12u14 | MPL-2.0 (+LGPL-3.0) | `system/libreoffice.md` |
+| libreoffice-pdfimport (PDF → Word, PDF Tools v2) | dipasang dari repo Debian yang sama | MPL-2.0 (+LGPL-3.0) | `system/libreoffice.md` — komponen LibreOffice, dipakai sebagai proses eksternal; tidak dimodifikasi. Versi nyata terbaca di SBOM sistem setelah image dibangun ulang |
 | curl | 7.88.1-10+deb12u5 | curl (MIT-style) | `system/curl.md` |
 
 ### 1.4 pdf.js worker
