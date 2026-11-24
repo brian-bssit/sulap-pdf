@@ -10,7 +10,7 @@ RUN npm run build
 FROM python:3.12-slim
 RUN apt-get update && apt-get install -y --no-install-recommends --no-install-suggests \
     qpdf curl tesseract-ocr tesseract-ocr-ind tesseract-ocr-eng \
-    libreoffice-core libreoffice-writer libreoffice-calc libreoffice-impress libreoffice-draw libreoffice-pdfimport \
+    libreoffice-core libreoffice-writer libreoffice-calc libreoffice-impress libreoffice-draw \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY backend/requirements.lock .
